@@ -112,7 +112,32 @@ Float_t p6[24]={0,0,0,-792.989,-854.609,-731.779,
 		0,0,0,-635.361,0,0,
 		0,0,0,0,0,0,
 		0,0,0,0,0,0};
+/////e calibrations///////
 
+Float_t kcoef[24] = {0.00377855,
+		     0.004016195,
+		     0.003470516,
+		     0.003675252,
+		     0.004003605,
+		     0.00408688,
+		     0.003707257,
+		     0.003818087,
+		     0.003829535,
+		     0.003745308,
+		     0.004016195,
+		     0.0,
+		     0.004217104,
+		     0.003911639,
+		     0.003991094,
+		     0.003806706,
+		     0.003739824,
+		     0.003876024,
+		     0.003889303,
+		     0.003737089,
+		     0.003669971,
+		     0.003917638,
+		     0.003330248,
+		     0.004080351};
 Float_t active=50.5; //Length of active area in mm
 Int_t offset=-500; //Distance in mm between active detector area and target
 Float_t positions[7]={offset-active/2+positions[1],
@@ -120,6 +145,7 @@ Float_t positions[7]={offset-active/2+positions[1],
 data raw;
 data cal;
 timing t;
+data corr;
 
 ULong64_t processed=0;
 ULong64_t faults=0;
@@ -159,7 +185,7 @@ void clean::SlaveBegin(TTree * /*tree*/)
   for(Int_t i=0;i<4;i++){
     hr[i]=new TH2F(Form("hr%d",i),Form("Recoil DE vs E recoil %d",i),512,0,8000,512,0,8000);
     hrg[i]=new TH2F(Form("hrg%d",i),Form("Recoil DE vs E recoil gated %d",i),512,0,8000,512,0,8000);
-    hezs[i]=new TH2F(Form("hezs%d",i),Form("E vs Z for side %d",i),1024,-1000,0,512,0,8000);
+    hezs[i]=new TH2F(Form("hezs%d",i),Form("E vs Z for side %d",i),1024,-1000,0,1200,0,12);
 
   }
   
@@ -251,6 +277,7 @@ Bool_t clean::Process(Long64_t entry)
     hxec[eid]->Fill(cal.x,cal.e);
     hesumc[eid]->Fill(xsum,cal.e);
     cal.z=-positions[6-eid%6]-active/2.+positions[0]+(active*cal.x);
+    corr.e=cal.e*kcoef[eid];
     // cout<<cal.z<<endl;
  
   
@@ -346,13 +373,14 @@ Bool_t clean::Process(Long64_t entry)
       //if(time_rel>-0.59&&time_rel<0.59){ //dp
       if(idturn!=-999) hezg[idturn]->Fill(cal.z,cal.e);
       Int_t side=floor(eid/6);
+    	  hrtac->Fill(time_rel);
       //if(rid==0&&side==0&&raw.de>3100&&raw.re>300){//position1
       // if(rid==0&&side==0&&raw.de>3200){//position2
-      if(idturn==0){
+	  //    if(idturn==0){
 	if(rid==0&&side==0){//dp
-	  hezs[side]->Fill(cal.z,cal.e);
+    hezs[side]->Fill(cal.z,corr.e);	
 	  hrg[rid]->Fill(raw.re,raw.de);
-	  hrtac->Fill(time_rel);
+
 	  if(tac_t[0]-t.e>640&&tac_t[0]-t.e<693){
 	    hxtac[eid]->Fill(cal.x,tac[0]);
 	  }
@@ -360,7 +388,7 @@ Bool_t clean::Process(Long64_t entry)
 	//	if(rid==1&&side==3&&raw.de>1200&&raw.re>2000){//position1
 	// if(rid==1&&side==3&&raw.de>1200){//position2
 	if(rid==1&&side==3){//dp
-	  hezs[side]->Fill(cal.z,cal.e);
+	   hezs[side]->Fill(cal.z,corr.e);
 	  hrg[rid]->Fill(raw.re,raw.de);
 	  hrtac->Fill(time_rel);
 	  if(tac_t[0]-t.e>640&&tac_t[0]-t.e<693){
@@ -370,7 +398,7 @@ Bool_t clean::Process(Long64_t entry)
 	//	if(rid==2&&side==2&&raw.de>3100&&raw.re>800){//position1
 	//if(rid==2&&side==2&&raw.de>2800){//position2
 	if(rid==2&&side==2){//dp
-	  hezs[side]->Fill(cal.z,cal.e);
+	   hezs[side]->Fill(cal.z,corr.e);
 	  hrg[rid]->Fill(raw.re,raw.de);
 	  hrtac->Fill(time_rel);
 	  if(tac_t[0]-t.e>640&&tac_t[0]-t.e<693){
@@ -380,14 +408,14 @@ Bool_t clean::Process(Long64_t entry)
 	//	if(rid==3&&side==1&&raw.de>1400&&raw.re>2400){//position1
 	//  if(rid==3&&side==1&&raw.de>1300){//position2
 	if(rid==3&&side==1){//
-	  hezs[side]->Fill(cal.z,cal.e);
+	   hezs[side]->Fill(cal.z,corr.e);
 	  hrg[rid]->Fill(raw.re,raw.de);
 	  hrtac->Fill(time_rel);
 	  if(tac_t[0]-t.e>640&&tac_t[0]-t.e<693){
 	    hxtac[eid]->Fill(cal.x,tac[0]);
 	  }
 	}
-	  }
+	//	  }
     }
    
     //////////////////////////////////////////////
