@@ -253,7 +253,7 @@ void builder::SlaveBegin(TTree * /*tree*/)
   htrace=new TH1F("htrace","trace",203,0,203);
   htrig=new TH1F("htrig","trigger",203,0,203);
   hint=new TH1F("hint","integral",203,0,203);
-  //ct0=new TCanvas("ct0");
+  ct0=new TCanvas("ct0");
   pt=new TPaveText(0.8,0.8,1,1,"brNDC");
     
   gen_tree = new TTree("gen_tree","PSD Tree");
@@ -394,7 +394,7 @@ Bool_t builder::Process(Long64_t entry)
     for(Int_t i=0;i<nhits;i++){
       if(detkind[i]>-1&&TMath::Abs(energy[i])>0){
 
-	Int_t watchtrace=-999;
+	Int_t watchtrace=999;
 	Bool_t saturated=0;
 	Bool_t pileup=0;
 	Float_t norm[203];
@@ -419,7 +419,7 @@ Bool_t builder::Process(Long64_t entry)
 	  Int_t n=203;
 	  Int_t n_poles=6;
 	  Int_t nt_poles=6;
-	  Double_t tc=5;
+	  Double_t tc=1;
 	  Double_t tc1=2;
 	  if(detkind[i]==3) tc1=1;
 	  if(detkind[i]==0) tc1=1;
@@ -629,7 +629,8 @@ Bool_t builder::Process(Long64_t entry)
 	      psd.RTC[(detid[i]-30)*2]=tc;
 	      break;
 	    case 4:
-	      psd.RDT[(detid[i]-30)*2+1]=TMath::Abs(energy[i]);
+	       psd.RDT[(detid[i]-30)*2+1]=TMath::Abs(energy[i]);
+	      //psd.RDT[(detid[i]-30)*2+1]=ypeaks[0];
 	      psd.RDTTimestamp[(detid[i]-30)*2+1]=event_timestamp[i];
 	      psd.RDTRise[(detid[i]-30)*2+1]=rise;
 	      psd.RTC[(detid[i]-30)*2+1]=tc;

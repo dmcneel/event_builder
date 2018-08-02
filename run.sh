@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for RUN in {200..213..1}
+for RUN in {400..404..1}
 do
   
    root -q -b -l "allcores.C($RUN)"
@@ -11,7 +11,7 @@ do
 
 
 
-cp gen.root dp1/gen_run${RUN}.root
+cp gen.root dp2/gen_run${RUN}.root
 echo ----Done with Processing Run Number ${RUN}----
 rm gen.root
 done

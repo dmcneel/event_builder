@@ -1,56 +1,90 @@
+#include <TCanvas.h>
+#include <iostream>
+#include <TStyle.h>
+#include <TF1.h>
+#include <TH1.h>
+#include <TH2.h>
+#include <TVirtualPad.h>
+#include <TROOT.h>
 
+
+
+
+Int_t rangelow=0;
+Int_t rangehigh=0;
+TF1 *f1=new TF1("f1","pol2",-850,-500);
+TF1 *f2=new TF1("f2","pol3",-850,-500);
+Int_t x;
+Bool_t accepted;
+Int_t type;
+Int_t detid;
+TCanvas *c1;
+
+void fit(Int_t detid)
 {
-  new TCanvas("c1","c1");
- 	gStyle->SetOptStat(0);	
-
-  Int_t rangelow=0;
-  Int_t rangehigh=0;
-
-  TF1 *f1=new TF1("f1","pol3",-1,-2,"");
-
- 
- 
-  Float_t exx1[24];
-  Float_t exx2[24];
-  Float_t exx3[24];
   
-  for(Int_t detid=0;detid<24;detid++){
-    exx1[detid]=0;
-    exx2[detid]=0;
-    exx3[detid]=0;
-    hxec[detid]->SetAxisRange(0,1,"X");
-    hxec[detid]->SetAxisRange(0,3000,"Y");
- 
 
-    hxec[detid]->SetMarkerStyle(kFullCircle);
-    hxec[detid]->Draw();
-    c1->Update();
+
+    rangelow=-850+59*(detid%6);
+    rangehigh=-790+59*(detid%6);
+    f1->SetRange(rangelow,rangehigh);
+    f2->SetRange(rangelow,rangehigh);
+    TString name("hezc");
+    name+=detid;
+    TH2F *hist=(TH2F*)gROOT->FindObject(name);
+    hist->SetAxisRange(rangelow,rangehigh,"X");
+    hist->SetAxisRange(0,8,"Y");
+    hist->SetMarkerStyle(kFullCircle);
+    hist->Draw();
+
+ 
+  
+   
+  
     c1->WaitPrimitive("CUTG","CutG");
-    CUTG->SetName("fit");
-
+    TH2F *xprof1=(TH2F*)hist->Clone();
+    hist->ProfileX("xprof1",0,512,"[CUTG");
   
-    hxec[detid]->ProfileX("xprof1",0,512,"[fit]");
-
-
-    f1->SetRange(0,1);
     xprof1->Fit("f1","R");
+    xprof1->Fit("f2","R");
     xprof1->Draw();
+    f1->Draw("same");
+    f2->Draw("same");
     c1->Update();
     c1->WaitPrimitive();
-    
-   
-    exx1[detid]=(Float_t)f1->GetParameter(1);
-    exx2[detid]=(Float_t)f1->GetParameter(2);
-    exx3[detid]=(Float_t)f1->GetParameter(3);
-	   
-    cout<<"calibration for detid "<<detid<<" ez1 = "<<ex1[detid]<< " ez2= "<<ex2[detid]<<" ez3= "<<ex3[detid]<<endl;
-    hxec[detid]->Draw();
-    f1->Draw("same");
 
-    c1->Update();
-    c1->WaitPrimitive(); 
-    fit->Delete();
-    c1->Clear();
-
-  }
+  
+}
+void fitall(void){
+  c1=new TCanvas("c1","c1");
+  gStyle->SetOptStat(0);
+  cout<<"Press y to accept and move on, n to try again, and b to go back"<<endl;
+  fit(0);
+  c1->AddExec("acceptyn","acceptfit()");
+ 
+     
+}
+void acceptfit(void){
+  Int_t event=gPad->GetEvent();
+  Int_t  x=gPad->GetEventX();
+  switch(x){
+  case 'y':
+    detid++;
+    fit(detid);
+    break;
+  case 'n':
+    fit(detid);
+    break;
+  case 'b':
+    detid--;
+    fit(detid);
+    break;
+  case 'f':
+    detid++;
+    break;
+  };
+}
+void endaccept(void){
+  c1->DeleteExec("acceptyn");
+  return;
 }
