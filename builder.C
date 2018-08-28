@@ -419,7 +419,7 @@ Bool_t builder::Process(Long64_t entry)
 	  Int_t n=203;
 	  Int_t n_poles=6;
 	  Int_t nt_poles=6;
-	  Double_t tc=1;
+	  Double_t tc=5;
 	  Double_t tc1=2;
 	  if(detkind[i]==3) tc1=1;
 	  if(detkind[i]==0) tc1=1;
@@ -513,11 +513,11 @@ Bool_t builder::Process(Long64_t entry)
 	       (trigger[ii]>trigger[ii+1]&&trigger[ii]>trigger[ii+2]&&trigger[ii]>trigger[ii+3]&&trigger[ii]>trigger[ii+4]&&trigger[ii]>trigger[ii+5])){
 	      xtpeaks[ntpeaks]=ii;
 	      ytpeaks[ntpeaks]=trigger[ii];
-	      ntpeaks++;
+	      if(xtpeaks[ntpeaks]<203) ntpeaks++;
 	      if(detkind[i]==3&&ntpeaks>1){
 		pileup=1;
-		detkind[i]=-1;//comment out to see pileup
-		//watchtrace=detkind[i]; //uncomment to see pileup
+		//	detkind[i]=-1;//comment out to see pileup
+		watchtrace=detkind[i]; //uncomment to see pileup
 		et3=type(detkind,detid,nhits);
 	      }
 	    }
@@ -533,6 +533,7 @@ Bool_t builder::Process(Long64_t entry)
 	    Int_t rangelookup=0;
 	    for(Int_t j=0;j<203;j++){
 	      norm[j]=((Float_t)(trace[i][j]&0x3fff)-(Float_t)m2_end_sample[i])*8000/energy[i];
+	      // htrace->SetBinContent(j,trace[i][j]&0x3fff);
 	      htrace->SetBinContent(j,norm[j]);
 	      if(norm[j]>2000&&start==0) start=j-5;
 	      if(norm[j]>7500&&rangelookup==0) rangelookup=j;
@@ -600,7 +601,7 @@ Bool_t builder::Process(Long64_t entry)
 	      ct0->Update();
 	      cout<<ntpeaks<<" trigger peaks and "<<npeaks<<" energy peaks at "<<xpeaks[0]<<endl;
 	      gPad->WaitPrimitive();
-	      // watchtrace=-999;
+	      watchtrace=-999;
 	      tg1->Delete();
 	      tg2->Delete();
 	    }//watchtrace options.

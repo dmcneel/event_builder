@@ -334,7 +334,10 @@ Bool_t clean::Process(Long64_t entry)
      //corr.e+=0.634*cal.x;
       //  corr.e-=bcoef[eid]-1.4;
     // cout<<cal.z<<endl;
-      Float_t ex=0.0122915*cal.z+17.774-corr.e;
+      Float_t ecm=corr.e+4.92877-0.0122231*cal.z;
+
+      //      Float_t ex=0.0122915*cal.z+17.774-corr.e;
+      Float_t ex=16.6+6.4650-(29/28)*ecm;
   
     // }
 
@@ -345,7 +348,7 @@ Bool_t clean::Process(Long64_t entry)
     Int_t amult=0;
 
 
-
+    
 
 
 
@@ -420,14 +423,15 @@ Bool_t clean::Process(Long64_t entry)
 	  Int_t side=floor(eid/6);
 	  //hezs[side]->Fill(cal.z,corr.e);
 
-	  if(((rid==0&&side==0)||(rid==3&&side==0))&&cal.re>0){//position1
+	  if(((rid==0&&side==0)||(rid==3&&side==0))&&cal.re>0&&raw.de>3000){//position1
 	    if(idturn!=-999){ hezg[idturn]->Fill(cal.z,corr.e);
 	    
 	      hezs[side]->Fill(cal.z,corr.e);
 	      hrg[rid]->Fill(cal.re,raw.de);
 	    }
-	    // if(idturn==2) hf->Fill(ex);
-	    hf->Fill(ex,weight);
+	     if(idturn==2) hf->Fill(ex);
+	    // hf->Fill(ex);
+	    //hf->Fill(ex,weight);
 	     if(idturn==-1) hfr->Fill(ex);
 	    hrtac->Fill(time_rel);
 	    hexc[eid]->Fill(cal.x,corr.e);
@@ -439,14 +443,15 @@ Bool_t clean::Process(Long64_t entry)
 	    }
 	  }
 
-	  if(((rid==1&&side==3)||(rid==0&&side==3))&&cal.re>0){//position1
+	  if(((rid==1&&side==3)||(rid==0&&side==3))&&cal.re>0&&raw.de>1000){//position1
 	    if(idturn!=-999){ hezg[idturn]->Fill(cal.z,corr.e);
 	      hezs[side]->Fill(cal.z,corr.e);
 	
 	      hrg[rid]->Fill(cal.re,raw.de);
 	    }
-	    // if(idturn==2) hf->Fill(ex);
-	    hf->Fill(ex,weight);
+	     if(idturn==2) hf->Fill(ex);
+	    // hf->Fill(ex);
+	    //hf->Fill(ex,weight);
 	    if(idturn==-1) hfr->Fill(ex);
 	    hrtac->Fill(time_rel);
 	    hez[eid]->Fill(cal.z,cal.e);
@@ -457,14 +462,15 @@ Bool_t clean::Process(Long64_t entry)
 	    }
 	  }
 
-	  if(((rid==2&&side==2)||(rid==1&&side==2))&&cal.re>0){//position1
+	  if(((rid==2&&side==2)||(rid==1&&side==2))&&cal.re>0&&raw.de>3000){//position1
 	    if(idturn!=-999){ hezg[idturn]->Fill(cal.z,corr.e);
 	      hezs[side]->Fill(cal.z,corr.e);
 	
 	      hrg[rid]->Fill(cal.re,raw.de);
 	    }
-	    // if(idturn==2) hf->Fill(ex);
-	    hf->Fill(ex,weight);
+	     if(idturn==2) hf->Fill(ex);
+	    // hf->Fill(ex);
+	    //hf->Fill(ex,weight);
 	    if(idturn==-1) hfr->Fill(ex);
 	    hrtac->Fill(time_rel);
 	    hez[eid]->Fill(cal.z,cal.e);
@@ -475,15 +481,16 @@ Bool_t clean::Process(Long64_t entry)
 	    }
 	  }	
 
-	  if(((rid==3&&side==1)||(rid==2&&side==1))&&cal.re>0){//position1
+	  if(((rid==3&&side==1)||(rid==2&&side==1))&&cal.re>0&&raw.de>1500){//position1
 	    if(idturn!=-999){
 	      hezg[idturn]->Fill(cal.z,corr.e);
 	      hezs[side]->Fill(cal.z,corr.e);
 	
 	      hrg[rid]->Fill(cal.re,raw.de);
 	    }
-	    //if(idturn==2) hf->Fill(ex);
-	    hf->Fill(ex,weight);
+	    if(idturn==2) hf->Fill(ex);
+	    // hf->Fill(ex);
+	    //hf->Fill(ex,weight);
 	    if(idturn==-1) hfr->Fill(ex);
 	    hrtac->Fill(time_rel);
 	    hez[eid]->Fill(cal.z,cal.e);

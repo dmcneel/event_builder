@@ -161,12 +161,12 @@ Float_t ep3[24]={0,0,0,0,0,0,
 
 ////recoil rise time corrections///////
 // E0 fit from 35 to 100
-Float_t re0[4]={-10915.6,-173069,-11024,-409.585};
-Float_t re1[4]={1132.01,9483.24,1431.41,523.745};
-Float_t re2[4]={-37.822,-193.364,-60.291,-18.9847};
-Float_t re3[4]={0.586342,1.8904,1.17411,0.262759};
-Float_t re4[4]={-0.00435744,-0.0089758,-0.0109122,-0.00161543};
-Float_t re5[4]={0.0000125976,0.0000166797,0.0000392694,0.00000370862};
+Float_t re0[4]={-10915.6,-173069,-11024,9114.75};
+Float_t re1[4]={1132.01,9483.24,1431.41,-187.485};
+Float_t re2[4]={-37.822,-193.364,-60.291,0.981855};
+Float_t re3[4]={0.586342,1.8904,1.17411,0};
+Float_t re4[4]={-0.00435744,-0.0089758,-0.0109122,0.0};
+Float_t re5[4]={0.0000125976,0.0000166797,0.0000392694,0.0};
 
 
 
@@ -281,6 +281,7 @@ Bool_t clean::Process(Long64_t entry)
   b_XN->GetEntry(entry);
   b_RDT->GetEntry(entry);
   b_RDTRise->GetEntry(entry);
+  b_ArrayRise->GetEntry(entry);
   Int_t eid=-1;
   Int_t xfid=-1;
   Int_t xnid=-1;
@@ -365,6 +366,7 @@ Bool_t clean::Process(Long64_t entry)
     raw.de=rdt[rid*2];
    
     raw.re=rdt[rid*2+1];
+    cal.re=0;
     Float_t fitrangelow[4]={35,86,26,30};
     Float_t fitrangehigh[4]={100,140,80,120};
     Float_t peakhight[4]={1635,2000,1500,3500};
@@ -372,7 +374,7 @@ Bool_t clean::Process(Long64_t entry)
     if(rt>fitrangelow[rid]&&rt<fitrangehigh[rid]) cal.re=raw.re*peakhight[rid]/(re0[rid]+re1[rid]*rt+re2[rid]*pow(rt,2)+re3[rid]*pow(rt,3)+re4[rid]*pow(rt,4)+re5[rid]*pow(rt,5));
     else cal.re=0;
     //if((event_type==1||event_type==2||event_type==3||event_type==4)&&rmult==0) faults++;
-    if(rid!=-1) hr[rid]->Fill(cal.re,raw.de);
+    if(rid!=-1&&cal.re>0&&raw.de>0) hr[rid]->Fill(cal.re,raw.de);
 
     
     //////////////////////////////////////////////
@@ -401,7 +403,7 @@ Bool_t clean::Process(Long64_t entry)
       time_rel-=xtcorr;
       //  time_rel*=10;
       // cout<<t.etc<<" "<<t.detc<<endl;
-      if(eid>-1&&rid>-1){
+      if(eid>-1&&rid>-1&&cal.re>0&&raw.de>0){
 	htx[eid]->Fill(cal.x,time_rel);
 	hez_all->Fill(cal.z,corr.e);
 
@@ -430,7 +432,7 @@ Bool_t clean::Process(Long64_t entry)
    
 	if(rid==0&&side==0){//dp
 	  hezs[side]->Fill(cal.z,corr.e);
-	  hrg[rid]->Fill(raw.re,raw.de);
+	  hrg[rid]->Fill(cal.re,raw.de);
 	
 	  hexc[eid]->Fill(cal.x,corr.e);
 	  hezc[eid]->Fill(cal.z,corr.e);
@@ -443,8 +445,8 @@ Bool_t clean::Process(Long64_t entry)
 	//	if(rid==1&&side==3&&raw.de>1200&&raw.re>2000){//position1
 	// if(rid==1&&side==3&&raw.de>1200){//position2
 	if(rid==1&&side==3){//dp
-	  	  hezs[side]->Fill(cal.z,corr.e);
-	  hrg[rid]->Fill(raw.re,raw.de);
+	  hezs[side]->Fill(cal.z,corr.e);
+	  hrg[rid]->Fill(cal.re,raw.de);
 	  hez[eid]->Fill(cal.z,cal.e);
 	  hexc[eid]->Fill(cal.x,corr.e);
 	  hezc[eid]->Fill(cal.z,corr.e);
@@ -455,8 +457,8 @@ Bool_t clean::Process(Long64_t entry)
 	//	if(rid==2&&side==2&&raw.de>3100&&raw.re>800){//position1
 	//if(rid==2&&side==2&&raw.de>2800){//position2
 	if(rid==2&&side==2){//dp
-	  	  hezs[side]->Fill(cal.z,corr.e);
-	  hrg[rid]->Fill(raw.re,raw.de);
+	  hezs[side]->Fill(cal.z,corr.e);
+	  hrg[rid]->Fill(cal.re,raw.de);
 	  hez[eid]->Fill(cal.z,cal.e);
 	  hexc[eid]->Fill(cal.x,corr.e);
 	  hezc[eid]->Fill(cal.z,corr.e);
@@ -468,7 +470,7 @@ Bool_t clean::Process(Long64_t entry)
 	//  if(rid==3&&side==1&&raw.de>1300){//position2
 	if(rid==3&&side==1){//
 	  	  hezs[side]->Fill(cal.z,corr.e);
-	  hrg[rid]->Fill(raw.re,raw.de);
+	  hrg[rid]->Fill(cal.re,raw.de);
 	  hez[eid]->Fill(cal.z,cal.e);
 	  hexc[eid]->Fill(cal.x,corr.e);
 	  hezc[eid]->Fill(cal.z,corr.e);
@@ -485,7 +487,7 @@ Bool_t clean::Process(Long64_t entry)
       Int_t pos=eid%6;
       for(Int_t i=0;i<6;i++){
       if(ez[i] && ez[i]->IsInside(cal.z,corr.e)){
-	hrve[rid][i]->Fill(rdt_rise[rid*2+1],raw.re);
+	hrve[rid][i]->Fill(rdt_rise[rid*2+1],cal.re);
 	hrag[rid][i]->Fill(raw.re,raw.de);
 	hrise[rid][i]->Fill(cal.z,rdt_rise[rid*2+1]);
       }
