@@ -28,6 +28,7 @@
 #include <TStyle.h>
 #include <iostream>
 #include <TH3.h>
+#include <TMath.h>
 
 
 TFile *oFile;
@@ -334,13 +335,19 @@ Bool_t clean::Process(Long64_t entry)
     // cout<<ezcorr<<endl;
     // corr.e-=ezcorr;
     corr.e*=ep1[eid];
-      corr.e+=ep0[eid];
+    corr.e+=ep0[eid];
      //corr.e+=0.634*cal.x;
       //  corr.e-=bcoef[eid]-1.4;
     // cout<<cal.z<<endl;
- 
-     Float_t ecm=corr.e+4.92877-0.0122231*cal.z;
-
+    Double_t m=938.7820612;
+    Double_t c=2.99792458E08;
+    Double_t vcm=3.07201E07;
+    Double_t vcm2=pow(vcm,2);
+    Double_t ecm=corr.e+4.92877-0.0122231*cal.z;
+    Double_t v02=2*ecm/m*pow(c,2);
+    Double_t vlab2=2*corr.e/m*pow(c,2);
+    Double_t theta=TMath::ACos(vlab2-v02-vcm2/(2*sqrt(v02)*vcm));
+    cout<<"lab energy "<<corr.e<<" vlab^2 "<<vlab2<<" ecm "<<ecm<<" v02 "<<v02<<" vcm "<<vcm<<endl;
       //      Float_t ex=0.0122915*cal.z+17.774-corr.e;
       Float_t ex=16.6+6.4650-(29/28)*ecm;
     // }
