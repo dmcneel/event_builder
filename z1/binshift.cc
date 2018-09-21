@@ -7,8 +7,9 @@ void binshift(Char_t *histname1,Char_t * histname2, Float_t shiftval)
   for (Int_t i=0; i< hist1->GetNbinsX();i++) 
     {    
       Float_t binvalue=hist1->GetBinContent(i);
-      if (i-binshift>0 && i+binshift<hist1->GetNbinsX())
-	hist2->SetBinContent(i+binshift,binvalue);
+      if ((i-binshift)>0 && i+binshift<hist1->GetNbinsX()){
+	hist2->SetBinContent(i+binshift,binvalue);}
+      else hist2->SetBinContent(i+binshift,0);
     }
 }
 

@@ -32,6 +32,8 @@
 #include <TCutG.h>
 
 TH2F *hevx[24];
+TH1F *hdist[6];
+TH1F *hf[9];
 TH2F *hez[24];
 TH2F *hezc[24];
 TH2F *hxfxn[24];
@@ -172,10 +174,7 @@ Float_t re5[4]={0.0000125976,0.0000166797,0.0000392694,0.0};
 
 //////////////////////////////////////////////////////////////////
 
-Float_t active=50.5; //Length of active area in mm
-Int_t offset=-100; //Distance in mm between active detector area and target
-Float_t positions[7]={offset-active/2+positions[1],
-		      66.76,125.76,184.76,243.66,302.96,361.56};
+
 data raw;
 data cal;
 timing t;
@@ -214,6 +213,9 @@ void clean::SlaveBegin(TTree * /*tree*/)
   }
    for(Int_t i=0;i<9;i++){
   hezg[i]=new TH2F(Form("hezg%d",i),Form("gated e vs z for turn ID# %i",i),512,-1000,0,512,0,12);
+ hf[i]=new TH1F(Form("hf%d",i),Form("excitation energy for tac peak %d",i),512,-15,15);
+
+ 
   }
   hez_all=new TH2F("hez_all","e vs z ungated",1024,-1000,0,512,0,12);
   hrtac=new TH1I("hrtac","gated and added recoil tac",1024,-200,200);
@@ -232,6 +234,7 @@ void clean::SlaveBegin(TTree * /*tree*/)
     hetz[i]=new TH3F(Form("het%d",i),Form("E vs time_rel vs z for side %d",i),200,-10,10,20,2,4,150,-540,-490);
 
   }
+  // hf=new TH1F("hf","excitation energy",512,-15,15);
   TFile *cuts=new TFile("cuts.root");
   for(Int_t i=0;i<6;i++){
     TString name="ez";
@@ -291,7 +294,10 @@ Bool_t clean::Process(Long64_t entry)
 
   
   ////////////Array Diagnostic Histograms////////////////
-    
+  Float_t active=50.5; //Length of active area in mm
+  Int_t offset=-100; //Distance in mm between active detector area and target
+  Float_t positions[7]={offset-active/2+positions[1],
+		      66.76,125.76,184.76,243.66,302.96,361.56};
   for(Int_t i=0;i<24;i++){
     if(e[i]>0&&(xf[i]!=0||xn[i]!=0)){
       eid=i;
@@ -339,7 +345,7 @@ Bool_t clean::Process(Long64_t entry)
     // corr.e-=ezcorr;
     corr.e*=ep1[eid];
       corr.e+=ep0[eid];
- 
+  
     ///////////////End Array///////////////////////
 
     ///////////////Recoil Diagnostics//////////////
@@ -408,17 +414,20 @@ Bool_t clean::Process(Long64_t entry)
 	hez_all->Fill(cal.z,corr.e);
 
 	////////////////(d,p)//////////////////////
-	if(time_rel>-0.59&&time_rel<0.59) idturn=0;
-	if(time_rel>2.9&&time_rel<5.66) idturn=1;
-	if(time_rel>5.56&&time_rel<7.23) idturn=2;
-	if(time_rel>8.40&&time_rel<9.18) idturn=3;
-	if(time_rel>11.13&&time_rel<12.30) idturn=4;
-	if(time_rel>13.48&&time_rel<14.65) idturn=5;
-	if(time_rel>16.99&&time_rel<17.77) idturn=6;
-	if(time_rel>18.55&&time_rel<19.73) idturn=7;
-	if(time_rel>24.02&&time_rel<24.80) idturn=8;
+	if(time_rel>-0.59&&time_rel<0.59) idturn=1;
+	if(time_rel>2.9&&time_rel<5.66) idturn=2;
+	if(time_rel>5.56&&time_rel<7.23) idturn=3;
+	if(time_rel>8.40&&time_rel<9.18) idturn=4;
+	if(time_rel>11.13&&time_rel<12.30) idturn=5;
+	if(time_rel>13.48&&time_rel<14.65) idturn=6;
+	if(time_rel>16.99&&time_rel<17.77) idturn=7;
+	if(time_rel>18.55&&time_rel<19.73) idturn=8;
+	//if(time_rel>24.02&&time_rel<24.80) idturn=9;
 	////////////////////////////////////////////
-
+	Float_t fit0=0.330;
+	Float_t fit1=1.03875;
+	Float_t ecm=corr.e+5.28567-0.0126579*cal.z/idturn;
+	Float_t ex=11.4838+4.2190-1.0373*ecm;
 	//if(time_rel>-3.32&&time_rel<-2.15){//position 1
 	//	if(time_rel>-2.54&&time_rel<-0.98){ //position 2
 	//if(time_rel>-0.59&&time_rel<0.59){ //dp
@@ -429,11 +438,11 @@ Bool_t clean::Process(Long64_t entry)
 	if(corr.e>2.6&&corr.e<3.3&&cal.z>-520) hetz[side]->Fill(time_rel,corr.e,cal.z);
 	//if(rid==0&&side==0&&raw.de>3100&&raw.re>300){//position1
 	// if(rid==0&&side==0&&raw.de>3200){//position2
-   
+	if(idturn>0&&idturn<10){
 	if(rid==0&&side==0){//dp
 	  hezs[side]->Fill(cal.z,corr.e);
 	  hrg[rid]->Fill(cal.re,raw.de);
-	
+	  hf[idturn]->Fill(ex);
 	  hexc[eid]->Fill(cal.x,corr.e);
 	  hezc[eid]->Fill(cal.z,corr.e);
 	  //  hze[eid]->Fill(cal.z,cal.e);
@@ -445,6 +454,7 @@ Bool_t clean::Process(Long64_t entry)
 	//	if(rid==1&&side==3&&raw.de>1200&&raw.re>2000){//position1
 	// if(rid==1&&side==3&&raw.de>1200){//position2
 	if(rid==1&&side==3){//dp
+	  hf[idturn]->Fill(ex);
 	  hezs[side]->Fill(cal.z,corr.e);
 	  hrg[rid]->Fill(cal.re,raw.de);
 	  hez[eid]->Fill(cal.z,cal.e);
@@ -457,6 +467,7 @@ Bool_t clean::Process(Long64_t entry)
 	//	if(rid==2&&side==2&&raw.de>3100&&raw.re>800){//position1
 	//if(rid==2&&side==2&&raw.de>2800){//position2
 	if(rid==2&&side==2){//dp
+	  hf[idturn]->Fill(ex);
 	  hezs[side]->Fill(cal.z,corr.e);
 	  hrg[rid]->Fill(cal.re,raw.de);
 	  hez[eid]->Fill(cal.z,cal.e);
@@ -469,6 +480,7 @@ Bool_t clean::Process(Long64_t entry)
 	//	if(rid==3&&side==1&&raw.de>1400&&raw.re>2400){//position1
 	//  if(rid==3&&side==1&&raw.de>1300){//position2
 	if(rid==3&&side==1){//
+	  hf[idturn]->Fill(ex);
 	  	  hezs[side]->Fill(cal.z,corr.e);
 	  hrg[rid]->Fill(cal.re,raw.de);
 	  hez[eid]->Fill(cal.z,cal.e);
@@ -478,7 +490,7 @@ Bool_t clean::Process(Long64_t entry)
 	    hxtac[eid]->Fill(cal.x,tac[0]);
 	  }
 	}
-     
+	}
       }
       hez[eid]->Fill(cal.z,cal.e);
        
