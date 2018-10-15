@@ -34,6 +34,7 @@
 TH2F *hevx[24];
 TH1F *hdist[6];
 TH1F *hf[9];
+TH1F *hfr[9];
 TH2F *hez[24];
 TH2F *hezc[24];
 TH2F *hxfxn[24];
@@ -214,6 +215,7 @@ void clean::SlaveBegin(TTree * /*tree*/)
    for(Int_t i=0;i<9;i++){
   hezg[i]=new TH2F(Form("hezg%d",i),Form("gated e vs z for turn ID# %i",i),512,-1000,0,512,0,12);
  hf[i]=new TH1F(Form("hf%d",i),Form("excitation energy for tac peak %d",i),512,-15,15);
+hfr[i]=new TH1F(Form("hfr%d",i),Form("excitation energy for random peak %d",i),512,-15,15);
 
  
   }
@@ -424,10 +426,15 @@ Bool_t clean::Process(Long64_t entry)
 	if(time_rel>18.55&&time_rel<19.73) idturn=8;
 	//if(time_rel>24.02&&time_rel<24.80) idturn=9;
 	////////////////////////////////////////////
+	Int_t randomid=-1;
+	if(time_rel>99.2&&time_rel<100.39){
+	  randomid=1;
+	  idturn=1;
+	}
 	Float_t fit0=0.330;
 	Float_t fit1=1.03875;
 	Float_t ecm=corr.e+5.28567-0.0126579*cal.z/idturn;
-	Float_t ex=11.4838+4.2190-1.0373*ecm;
+	Float_t ex=(11.4838+4.2190-1.0373*ecm+fit0)*fit1;
 	//if(time_rel>-3.32&&time_rel<-2.15){//position 1
 	//	if(time_rel>-2.54&&time_rel<-0.98){ //position 2
 	//if(time_rel>-0.59&&time_rel<0.59){ //dp
@@ -442,7 +449,8 @@ Bool_t clean::Process(Long64_t entry)
 	if(rid==0&&side==0){//dp
 	  hezs[side]->Fill(cal.z,corr.e);
 	  hrg[rid]->Fill(cal.re,raw.de);
-	  hf[idturn]->Fill(ex);
+	  if(randomid<0) hf[idturn]->Fill(ex);
+	  if(randomid>0) hfr[randomid]->Fill(ex);
 	  hexc[eid]->Fill(cal.x,corr.e);
 	  hezc[eid]->Fill(cal.z,corr.e);
 	  //  hze[eid]->Fill(cal.z,cal.e);
@@ -454,7 +462,9 @@ Bool_t clean::Process(Long64_t entry)
 	//	if(rid==1&&side==3&&raw.de>1200&&raw.re>2000){//position1
 	// if(rid==1&&side==3&&raw.de>1200){//position2
 	if(rid==1&&side==3){//dp
-	  hf[idturn]->Fill(ex);
+	
+	  if(randomid<0) hf[idturn]->Fill(ex);
+	  if(randomid>0) hfr[randomid]->Fill(ex);
 	  hezs[side]->Fill(cal.z,corr.e);
 	  hrg[rid]->Fill(cal.re,raw.de);
 	  hez[eid]->Fill(cal.z,cal.e);
@@ -467,7 +477,9 @@ Bool_t clean::Process(Long64_t entry)
 	//	if(rid==2&&side==2&&raw.de>3100&&raw.re>800){//position1
 	//if(rid==2&&side==2&&raw.de>2800){//position2
 	if(rid==2&&side==2){//dp
-	  hf[idturn]->Fill(ex);
+
+	  if(randomid<0) hf[idturn]->Fill(ex);
+	  if(randomid>0) hfr[randomid]->Fill(ex);
 	  hezs[side]->Fill(cal.z,corr.e);
 	  hrg[rid]->Fill(cal.re,raw.de);
 	  hez[eid]->Fill(cal.z,cal.e);
@@ -480,7 +492,9 @@ Bool_t clean::Process(Long64_t entry)
 	//	if(rid==3&&side==1&&raw.de>1400&&raw.re>2400){//position1
 	//  if(rid==3&&side==1&&raw.de>1300){//position2
 	if(rid==3&&side==1){//
-	  hf[idturn]->Fill(ex);
+
+	  if(randomid<0) hf[idturn]->Fill(ex);
+	  if(randomid>0) hfr[randomid]->Fill(ex);
 	  	  hezs[side]->Fill(cal.z,corr.e);
 	  hrg[rid]->Fill(cal.re,raw.de);
 	  hez[eid]->Fill(cal.z,cal.e);

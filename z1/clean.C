@@ -50,8 +50,8 @@ TH2F *hezs[4];
 TH2F *hxtac[24];
 TH2F *hr[4];
 TH2F *hrg[4];
-TH1F *hrtac;
-TH1F *hrtacg;
+TH2F *hrtac[4];
+TH2F *hrtacg;
 TH2F *hezg2[4][24];
 TH1F *harray_rise[24];
 TH1F *hrecoil_rise[4];
@@ -238,10 +238,11 @@ void clean::SlaveBegin(TTree * /*tree*/)
   hrmult=new TH1I("hrmult","recoil multiplicity",10,0,10);
   hamult=new TH1I("hamult","energy multiplicty",10,0,10);
  
-  hrtac=new TH1F("hrtac","sum recoil tac",1024,-200,200);
-  hrtacg=new TH1F("hrtacg","gated and summed recoil tac",1024,-200,200);
+ 
+  hrtacg=new TH2F("hrtacg","gated and summed recoil tac",1024,-200,200,24,0,24);
   hxect=new TH2F("hxect"," test of energy calibration",1024,-0.1,1.1,10024,-1,1400);
   for(Int_t i=0;i<4;i++){
+    hrtac[i]=new TH2F(Form("hrtac%d",i),Form("tac vs array for reocil %d",i),1024,-200,200,24,0,24);
     hr[i]=new TH2F(Form("hr%d",i),Form("Recoil DE vs E recoil %d",i),512,0,8000,512,0,8000);
     hrg[i]=new TH2F(Form("hrg%d",i),Form("Recoil DE vs E recoil gated %d",i),512,0,8000,512,0,8000);
     hezs[i]=new TH2F(Form("hezs%d",i),Form("E vs Z for side %d",i),1024,-1000,0,512,-4,12);
@@ -426,7 +427,8 @@ Bool_t clean::Process(Long64_t entry)
     
      
       Float_t time_corr=0;
-      Float_t xtcorr=p0[eid]+p1[eid]*cal.x+p2[eid]*pow(cal.x,2)+p3[eid]*pow(cal.x,3)+p4[eid]*pow(cal.x,4)+p5[eid]*pow(cal.x,5)+p6[eid]*pow(cal.x,6);
+      // Float_t xtcorr=p0[eid]+p1[eid]*cal.x+p2[eid]*pow(cal.x,2)+p3[eid]*pow(cal.x,3)+p4[eid]*pow(cal.x,4)+p5[eid]*pow(cal.x,5)+p6[eid]*pow(cal.x,6);
+      Float_t xtcorr=p1[eid]*cal.x+p2[eid]*pow(cal.x,2)+p3[eid]*pow(cal.x,3)+p4[eid]*pow(cal.x,4)+p5[eid]*pow(cal.x,5)+p6[eid]*pow(cal.x,6);
       time_rel=t.e-t.de;
       time_corr=t.etc-t.detc;
       time_rel+=time_corr;
@@ -439,13 +441,18 @@ Bool_t clean::Process(Long64_t entry)
 	htx[eid]->Fill(cal.x,time_rel);
 	
 	hez_all->Fill(cal.z,corr.e);
-	 Float_t timeshift[4][24]={{-0.902,-0.605,-0.953,-0.787,-1.194,-0.730,-1.137,-0.939,-0.754,-1.156,-0.889,0,2.144,2.093,2.062,2.298,2.665,2.721,0.040,0.198,0.200,0.147,0.046,0.263},
-	 			 {-1.522,-1.365,-1.552,-1.940,-1.918,-1.352,-1.639,-2.127,-1.227,-1.738,-1.602,0,1.646,1.396,1.480,1.518,1.937,1.949,-0.079,-0.197,-0.215,-0.227,-0.124,-0.217},
-	 			 {-1.951,-1.786,-2.113,-1.237,-3.307,-3.142,-2.023,-3.753,-2.007,-2.389,-1.379,0,1.531,1.512,0.886,1.704,1.744,1.564,-1.607,-1.169,-1.550,-1.198,-1.704,-0.438},
-	 			 {-0.767,-0.556,-0.890,-0.724,-0.754,-0.362,-1.250,-0.831,-0.662,-0.856,-1.342,0,2.101,1.739,1.946,1.975,2.527,2.547,0.170,0.575,0.365,0.042,0.345,0.046}};
+	 // Float_t timeshift[4][24]={{-0.902,-0.605,-0.953,-0.787,-1.194,-0.730,-1.137,-0.939,-0.754,-1.156,-0.889,0,2.144,2.093,2.062,2.298,2.665,2.721,0.040,0.198,0.200,0.147,0.046,0.263},
+	 // 			 {-1.522,-1.365,-1.552,-1.940,-1.918,-1.352,-1.639,-2.127,-1.227,-1.738,-1.602,0,1.646,1.396,1.480,1.518,1.937,1.949,-0.079,-0.197,-0.215,-0.227,-0.124,-0.217},
+	 // 			 {-1.951,-1.786,-2.113,-1.237,-3.307,-3.142,-2.023,-3.753,-2.007,-2.389,-1.379,0,1.531,1.512,0.886,1.704,1.744,1.564,-1.607,-1.169,-1.550,-1.198,-1.704,-0.438},
+	 // 			 {-0.767,-0.556,-0.890,-0.724,-0.754,-0.362,-1.250,-0.831,-0.662,-0.856,-1.342,0,2.101,1.739,1.946,1.975,2.527,2.547,0.170,0.575,0.365,0.042,0.345,0.046}};
 	 //Float_t timeshift[4][4]={{0.626,-0.467,-3.503,0.841},{0.426,-0.558,-3.356,0.668},{3.740,2.562,-0.384,3.884},{1.625,0.513,-2.375,1.817}};
+ Float_t timeshift[4][24]={{-2.60240e+00,-1.54684e+00,-1.33075e+00,-1.50711e+00,-1.28869e+00,-9.70010e-01,-2.69477e+00 ,-9.41039e-01 ,-1.91239e+00,-2.43824e+00 ,-1.67853e+00 ,0,-3.12264e+00,-3.19758e+00,-2.56692e+00,-1.89280e+00,-2.32044e+00,-2.32137e+00,-2.77009e+00,-2.70964e+00,-2.09231e+00,-2.35235e+00,-2.31421e+00,-2.24468e+00},
+	 			 {-3.85428e+00,-2.70382e+00,-2.48971e+00,-2.68997e+00,-2.55831e+00,-2.18765e+00,-3.78571e+00,-1.97816e+00,-3.01783e+00,-3.60676e+00,-2.79658e+00,0,-4.34673e+00,-4.43207e+00,-3.78658e+00,-3.07253e+00,-3.47086e+00,-3.37841e+00,-4.02604e+00,-3.90794e+00,-3.25909e+00,-3.56008e+00,-3.48581e+00,-3.47050e+00},
+	 			 {-6.67060e+00,-5.52836e+00,-5.44506e+00,-5.63195e+00,-5.44985e+00,-5.03135e+00,-6.66790e+00,-4.94977e+00,-5.94286e+00,-6.47351e+00,-5.66125e+00,0,-7.27163e+00,-7.42916e+00,-6.72138e+00,-5.94913e+00,-6.29910e+00,-6.24199e+00,-7.03994e+00,-6.89281e+00,-6.28489e+00,-6.44630e+00,-6.51746e+00,-6.44167e+00},
+	 			 {-2.50708e+00,-1.42482e+00,-1.18335e+00,-1.45904e+00,-1.21625e+00,-8.70729e-01,-2.54631e+00,-5.97382e-01,-1.73853e+00,-2.25019e+00,-1.54035e+00,0,-2.99861e+00,-3.16459e+00,-2.53619e+00,-1.80750e+00,-2.22701e+00,-2.23673e+00,-2.72280e+00,-2.67713e+00,-2.07873e+00,-2.28491e+00,-2.27736e+00,-2.17577e+00}};
 	/////////////////Position 1///////////////////
 	 time_rel-=timeshift[rid][eid];
+	 hrtac[rid]->Fill(time_rel,eid);
 	 //	if(time_rel>-4.49&&time_rel<-1.76) idturn=8;
 	//	if(time_rel>-1.37&&time_rel<1.37) idturn=9;
 	if(time_rel>0.2&&time_rel<2.93) idturn=1;
@@ -489,7 +496,7 @@ Bool_t clean::Process(Long64_t entry)
 	//	if(idturn>0) ecm=corr.e+4.92877-0.0122231*cal.z/idturn;
 
       //      Float_t ex=0.0122915*cal.z+17.774-corr.e;
-      Float_t ex=16.6+6.4650-(29/28)*ecm;
+	Float_t ex=(16.6+6.4650-(29/28)*ecm-0.371)*4.878/5.034;
 	Int_t weight=0;
 	if(idturn==2) weight=1;
 	if(idturn==-1) weight=-1;
@@ -497,12 +504,12 @@ Bool_t clean::Process(Long64_t entry)
 	if(na1 && !na1->IsInside(cal.z,corr.e)){
 	  Int_t side=floor(eid/6);
 	 
-	  //hezs[side]->Fill(cal.z,corr.e);
+	  //hezs[side]->Fill(cal.z,corr.e);;
 
-	  //time_rel-=timeshift[side][rid];
+	  //time_rel-=timeshift[side][rid];;
 	 
 	  // hrtac2[side][rid]->Fill(time_rel);
-	  hrtac->Fill(time_rel);
+
 	  Bool_t goodede=0;
 	  if(rid==0&&raw.re>0&&raw.de>3000) goodede=1;
 	  if(rid==1&&raw.re>0&&raw.de>1000) goodede=1;
@@ -526,7 +533,8 @@ Bool_t clean::Process(Long64_t entry)
 	  if(rid==2&&side==2) sidecorr=1;
 	  if(rid==3&&side==1) sidecorr=1;
 	  if(goodede&&sidecorr){
-	    hrtacg->Fill(time_rel); 
+	   
+	    hrtacg->Fill(time_rel,eid); 
 	    hrtac2[rid][eid]->Fill(time_rel);
 	    if(idturn==1){
 	      hezg2[side][rid]->Fill(cal.z,corr.e);
