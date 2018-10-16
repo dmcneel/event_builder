@@ -29,6 +29,7 @@
 #include <iostream>
 #include <TH3.h>
 
+TH2I *hmult;
 TH2F *hevx[24];
 TH1F *hf[9];
 TH1F *hfdet[24];
@@ -237,7 +238,7 @@ void clean::SlaveBegin(TTree * /*tree*/)
   
   hrmult=new TH1I("hrmult","recoil multiplicity",10,0,10);
   hamult=new TH1I("hamult","energy multiplicty",10,0,10);
- 
+  hmult=new TH2I("hmult","Detector vs Detector gated on tac and recoil",4,0,4,24,0,24);
  
   hrtacg=new TH2F("hrtacg","gated and summed recoil tac",1024,-200,200,24,0,24);
   hxect=new TH2F("hxect"," test of energy calibration",1024,-0.1,1.1,10024,-1,1400);
@@ -256,10 +257,10 @@ void clean::SlaveBegin(TTree * /*tree*/)
   
   TFile *cuts=new TFile("cuts.root");
   na1=(TCutG*)cuts->Get("naccept1");
-  ede0=(TCutG*)cuts->Get("ede0");
-  ede1=(TCutG*)cuts->Get("ede1");
-  ede2=(TCutG*)cuts->Get("ede2");
-  ede3=(TCutG*)cuts->Get("ede3");
+  ede0=(TCutG*)cuts->Get("nede0");
+  ede1=(TCutG*)cuts->Get("nede1");
+  ede2=(TCutG*)cuts->Get("nede2");
+  ede3=(TCutG*)cuts->Get("nede3");
   if(na1) cout<<"found cut1"<<endl;
   if(ede0&&ede1&&ede2&&ede3) cout<<"All E - DE Cuts Found"<<endl;
    TString option = GetOption();
@@ -405,7 +406,7 @@ Bool_t clean::Process(Long64_t entry)
     if(rt>fitrangelow[rid]&&rt<fitrangehigh[rid]) cal.re=raw.re*peakhight[rid]/(re0[rid]+re1[rid]*rt+re2[rid]*pow(rt,2)+re3[rid]*pow(rt,3)+re4[rid]*pow(rt,4)+re5[rid]*pow(rt,5));
     else cal.re=raw.re;
     //if((event_type==1||event_type==2||event_type==3||event_type==4)&&rmult==0) faults++;
-    if(rid!=-1) hr[rid]->Fill(raw.re,raw.de);
+    if(rid!=-1) hr[rid]->Fill(cal.re,raw.de);
     harray_rise[eid]->Fill(a_rise[eid]);
     hrecoil_rise[rid]->Fill(rt);
     //////////////////////////////////////////////
@@ -447,19 +448,22 @@ Bool_t clean::Process(Long64_t entry)
 	 // 			 {-0.767,-0.556,-0.890,-0.724,-0.754,-0.362,-1.250,-0.831,-0.662,-0.856,-1.342,0,2.101,1.739,1.946,1.975,2.527,2.547,0.170,0.575,0.365,0.042,0.345,0.046}};
 	 //Float_t timeshift[4][4]={{0.626,-0.467,-3.503,0.841},{0.426,-0.558,-3.356,0.668},{3.740,2.562,-0.384,3.884},{1.625,0.513,-2.375,1.817}};
  Float_t timeshift[4][24]={{-2.60240e+00,-1.54684e+00,-1.33075e+00,-1.50711e+00,-1.28869e+00,-9.70010e-01,-2.69477e+00 ,-9.41039e-01 ,-1.91239e+00,-2.43824e+00 ,-1.67853e+00 ,0,-3.12264e+00,-3.19758e+00,-2.56692e+00,-1.89280e+00,-2.32044e+00,-2.32137e+00,-2.77009e+00,-2.70964e+00,-2.09231e+00,-2.35235e+00,-2.31421e+00,-2.24468e+00},
-	 			 {-3.85428e+00,-2.70382e+00,-2.48971e+00,-2.68997e+00,-2.55831e+00,-2.18765e+00,-3.78571e+00,-1.97816e+00,-3.01783e+00,-3.60676e+00,-2.79658e+00,0,-4.34673e+00,-4.43207e+00,-3.78658e+00,-3.07253e+00,-3.47086e+00,-3.37841e+00,-4.02604e+00,-3.90794e+00,-3.25909e+00,-3.56008e+00,-3.48581e+00,-3.47050e+00},
-	 			 {-6.67060e+00,-5.52836e+00,-5.44506e+00,-5.63195e+00,-5.44985e+00,-5.03135e+00,-6.66790e+00,-4.94977e+00,-5.94286e+00,-6.47351e+00,-5.66125e+00,0,-7.27163e+00,-7.42916e+00,-6.72138e+00,-5.94913e+00,-6.29910e+00,-6.24199e+00,-7.03994e+00,-6.89281e+00,-6.28489e+00,-6.44630e+00,-6.51746e+00,-6.44167e+00},
-	 			 {-2.50708e+00,-1.42482e+00,-1.18335e+00,-1.45904e+00,-1.21625e+00,-8.70729e-01,-2.54631e+00,-5.97382e-01,-1.73853e+00,-2.25019e+00,-1.54035e+00,0,-2.99861e+00,-3.16459e+00,-2.53619e+00,-1.80750e+00,-2.22701e+00,-2.23673e+00,-2.72280e+00,-2.67713e+00,-2.07873e+00,-2.28491e+00,-2.27736e+00,-2.17577e+00}};
+ 	 			 {-3.85428e+00,-2.70382e+00,-2.48971e+00,-2.68997e+00,-2.55831e+00,-2.18765e+00,-3.78571e+00,-1.97816e+00,-3.01783e+00,-3.60676e+00,-2.79658e+00,0,-4.34673e+00,-4.43207e+00,-3.78658e+00,-3.07253e+00,-3.47086e+00,-3.37841e+00,-4.02604e+00,-3.90794e+00,-3.25909e+00,-3.56008e+00,-3.48581e+00,-3.47050e+00},
+ 	 			 {-6.67060e+00,-5.52836e+00,-5.44506e+00,-5.63195e+00,-5.44985e+00,-5.03135e+00,-6.66790e+00,-4.94977e+00,-5.94286e+00,-6.47351e+00,-5.66125e+00,0,-7.27163e+00,-7.42916e+00,-6.72138e+00,-5.94913e+00,-6.29910e+00,-6.24199e+00,-7.03994e+00,-6.89281e+00,-6.28489e+00,-6.44630e+00,-6.51746e+00,-6.44167e+00},
+ 	 			 {-2.50708e+00,-1.42482e+00,-1.18335e+00,-1.45904e+00,-1.21625e+00,-8.70729e-01,-2.54631e+00,-5.97382e-01,-1.73853e+00,-2.25019e+00,-1.54035e+00,0,-2.99861e+00,-3.16459e+00,-2.53619e+00,-1.80750e+00,-2.22701e+00,-2.23673e+00,-2.72280e+00,-2.67713e+00,-2.07873e+00,-2.28491e+00,-2.27736e+00,-2.17577e+00}};
 	/////////////////Position 1///////////////////
 	 time_rel-=timeshift[rid][eid];
 	 hrtac[rid]->Fill(time_rel,eid);
+	 Int_t side=floor(eid/6);
+	 Float_t sideshift[4]={1.88387e-01,2.16623e-01,3.38007e+00,1.05903e+00};
+	 time_rel-=sideshift[side];
 	 //	if(time_rel>-4.49&&time_rel<-1.76) idturn=8;
 	//	if(time_rel>-1.37&&time_rel<1.37) idturn=9;
-	if(time_rel>0.2&&time_rel<2.93) idturn=1;
-	if(time_rel>2.93&&time_rel<5.66) idturn=2;
-	if(time_rel>6.05&&time_rel<8.01) idturn=3;
-	if(time_rel>8.40&&time_rel<10.74) idturn=4;
-	if(time_rel>11.52&&time_rel<13.48) idturn=5;
+	if(time_rel>-1.76&&time_rel<0.98) idturn=1;
+	if(time_rel>0.98&&time_rel<3.71) idturn=2;
+	if(time_rel>4.49&&time_rel<6.05) idturn=3;
+	if(time_rel>6.05&&time_rel<9.18) idturn=4;
+	if(time_rel>9.57&&time_rel<11.52) idturn=5;
 	if(time_rel>13.48&&time_rel<15.04) idturn=6;
 	if(time_rel>101.26&&time_rel<104) idturn=7;
 	Int_t randomid=-1;
@@ -467,7 +471,7 @@ Bool_t clean::Process(Long64_t entry)
 	//   randomid=0;
 	//   idturn=0;
 	// }
-	if(time_rel>100&&time_rel<102.73){
+	if(time_rel>97.84&&time_rel<100.4){
 	  idturn=1;
 	  randomid=1;
 	}
@@ -492,7 +496,8 @@ Bool_t clean::Process(Long64_t entry)
 	  randomid=6;
 	}
 	////////////////////////////////////////////
-	Float_t ecm=corr.e+4.92877-0.0122231*cal.z;
+	Float_t ecm=0;
+	if(idturn>0)  ecm=corr.e+4.92877-0.0122231*cal.z/idturn;
 	//	if(idturn>0) ecm=corr.e+4.92877-0.0122231*cal.z/idturn;
 
       //      Float_t ex=0.0122915*cal.z+17.774-corr.e;
@@ -502,7 +507,7 @@ Bool_t clean::Process(Long64_t entry)
 	if(idturn==-1) weight=-1;
 	
 	if(na1 && !na1->IsInside(cal.z,corr.e)){
-	  Int_t side=floor(eid/6);
+	 
 	 
 	  //hezs[side]->Fill(cal.z,corr.e);;
 
@@ -511,35 +516,47 @@ Bool_t clean::Process(Long64_t entry)
 	  // hrtac2[side][rid]->Fill(time_rel);
 
 	  Bool_t goodede=0;
-	  if(rid==0&&raw.re>0&&raw.de>3000) goodede=1;
-	  if(rid==1&&raw.re>0&&raw.de>1000) goodede=1;
-	  if(rid==2&&raw.re>0&&raw.de>3000) goodede=1;
-	  if(rid==3&&raw.re>0&&raw.de>1500) goodede=1;
-	  // if(ede0 && rid==0 && ede0->IsInside(raw.re,raw.de)) goodede=1;
-	  // if(ede1 && rid==1 && ede1->IsInside(raw.re,raw.de)) goodede=1;
-	  // if(ede2 && rid==2 && ede2->IsInside(raw.re,raw.de)) goodede=1;
-	  // if(ede3 && rid==3 && ede3->IsInside(raw.re,raw.de)) goodede=1;
+	  if(rid==0&&raw.re>0&&raw.de>3600) goodede=1;
+	  if(rid==1&&raw.re>0&&raw.de>1743) goodede=1;
+	  if(rid==2&&raw.re>0&&raw.de>3542) goodede=1;
+	  if(rid==3&&raw.re>0&&raw.de>1679) goodede=1;
+	  if(ede0 && rid==0 && ede0->IsInside(cal.re,raw.de)) goodede=0;
+	  if(ede1 && rid==1 && ede1->IsInside(cal.re,raw.de)) goodede=0;
+	  if(ede2 && rid==2 && ede2->IsInside(cal.re,raw.de)) goodede=0;
+	  if(ede3 && rid==3 && ede3->IsInside(cal.re,raw.de)) goodede=0;
+	  if(idturn>0&&goodede) hmult->Fill(rid,eid);
 	  Bool_t sidecorr=0;
-	  // if(rid==1&&side==0) sidecorr=1;
+	 
 	  // if(rid==0&&side==0) sidecorr=1;
 	  // if(rid==0&&side==1) sidecorr=1;
 	  // if(rid==3&&side==1) sidecorr=1;
-	  // if(rid==3&&side==2) sidecorr=1;
-	  // if(rid==2&&side==2) sidecorr=1;
+	
+	  
 	  // if(rid==2&&side==3) sidecorr=1;
 	  // if(rid==1&&side==3) sidecorr=1;
 	  if(rid==0&&side==0) sidecorr=1;
+	  // if(rid==0&&side==3) sidecorr=1; //secondary
 	  if(rid==1&&side==3) sidecorr=1;
+	  //  if(rid==1&&side==2) sidecorr=1;
 	  if(rid==2&&side==2) sidecorr=1;
+	  // if(rid==2&&side==1) sidecorr=1;
 	  if(rid==3&&side==1) sidecorr=1;
+	  //if(rid==3&&side==0) sidecorr=1;
 	  if(goodede&&sidecorr){
-	   
+	  //   if(idturn==1&&ex>-.15&&ex<.26){
+	  //   ang=det*3.5+14.5;
+	  //   hang[1]->Fill(ang);
+	  // }
+	  // if(idturn==1&&ex>0.79&&ex<1.2){
+	  //   ang=det*3.5+14.5;
+	  //   hang[2]->Fill(ang);
+	  // }
 	    hrtacg->Fill(time_rel,eid); 
 	    hrtac2[rid][eid]->Fill(time_rel);
 	    if(idturn==1){
 	      hezg2[side][rid]->Fill(cal.z,corr.e);
 	      hezs[side]->Fill(cal.z,corr.e);
-	      if(ex>5.24&&ex<5.54) hrg[rid]->Fill(raw.re,raw.de);
+	      hrg[rid]->Fill(cal.re,raw.de);
 	      hfdet[eid]->Fill(ex);
 	    }
 	    if(idturn>0){ hezg[idturn]->Fill(cal.z,corr.e);

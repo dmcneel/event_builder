@@ -44,6 +44,7 @@ TH1F *hrtac2[4][24];
 TH2F *hrve[4];
 TH2F *hrvec[4];
 TH2F *htve[24];
+TH2I *hmult;
 TH2F *hxect;
 TH2F *hxfxnc[24];
 TH2F *hesumc[24];
@@ -63,6 +64,10 @@ ULong64_t NumEntries = 0;
 ULong64_t ProcessedEntries = 0;
 Float_t Frac = 0.1;
 TCutG *na2;
+TCutG *ede0;
+TCutG *ede1;
+TCutG *ede2;
+TCutG *ede3;
 
 typedef struct{
   
@@ -232,7 +237,7 @@ void clean::SlaveBegin(TTree * /*tree*/)
 
   }
   hez_all=new TH2F("hez_all","e vs z ungated",1024,-1000,0,512,0,12);
- 
+  hmult=new TH2I("hmult","Detector vs Detector gated on tac and recoil",4,0,4,24,0,24);
  
  
   hrtacg=new TH2F("hrtacg","gated and summed recoil tac",1024,-200,200,24,0,24);
@@ -252,8 +257,12 @@ void clean::SlaveBegin(TTree * /*tree*/)
   }
   TFile *cuts=new TFile("cuts.root");
   na2=(TCutG*)cuts->Get("naccept2");
+  ede0=(TCutG*)cuts->Get("nede0");
+  ede1=(TCutG*)cuts->Get("nede1");
+  ede2=(TCutG*)cuts->Get("nede2");
+  ede3=(TCutG*)cuts->Get("nede3");
   if(na2) cout<<"found cut2"<<endl;
-  
+  if(ede0&&ede1&&ede2&&ede3) cout<<"All E - DE Cuts Found"<<endl;
    TString option = GetOption();
 
 }
@@ -400,7 +409,7 @@ Bool_t clean::Process(Long64_t entry)
     
     //////////////////////////////////////////////
 
-    /////////////////Timing///////////////////////
+    /////////////////Timing/////////////////////////
     b_RDTTimestamp->GetEntry(entry);
     b_EnergyTimestamp->GetEntry(entry);
     b_EnergyTimestampCorrection->GetEntry(entry);
@@ -451,17 +460,19 @@ Bool_t clean::Process(Long64_t entry)
 	 			 {-3.85428e+00,-2.70382e+00,-2.48971e+00,-2.68997e+00,-2.55831e+00,-2.18765e+00,-3.78571e+00,-1.97816e+00,-3.01783e+00,-3.60676e+00,-2.79658e+00,0,-4.34673e+00,-4.43207e+00,-3.78658e+00,-3.07253e+00,-3.47086e+00,-3.37841e+00,-4.02604e+00,-3.90794e+00,-3.25909e+00,-3.56008e+00,-3.48581e+00,-3.47050e+00},
 	 			 {-6.67060e+00,-5.52836e+00,-5.44506e+00,-5.63195e+00,-5.44985e+00,-5.03135e+00,-6.66790e+00,-4.94977e+00,-5.94286e+00,-6.47351e+00,-5.66125e+00,0,-7.27163e+00,-7.42916e+00,-6.72138e+00,-5.94913e+00,-6.29910e+00,-6.24199e+00,-7.03994e+00,-6.89281e+00,-6.28489e+00,-6.44630e+00,-6.51746e+00,-6.44167e+00},
 	 			 {-2.50708e+00,-1.42482e+00,-1.18335e+00,-1.45904e+00,-1.21625e+00,-8.70729e-01,-2.54631e+00,-5.97382e-01,-1.73853e+00,-2.25019e+00,-1.54035e+00,0,-2.99861e+00,-3.16459e+00,-2.53619e+00,-1.80750e+00,-2.22701e+00,-2.23673e+00,-2.72280e+00,-2.67713e+00,-2.07873e+00,-2.28491e+00,-2.27736e+00,-2.17577e+00}};
-
+	 Int_t side=floor(eid/6);
 
 	 // time_rel-=timeshift[side][rid];
 	
 	  time_rel-=timeshift[rid][eid];
-	
+	  Float_t sideshift[4]={7.36570e-01,7.35489e-01,2.04687e+00,9.98677e-01};
+	  
+	   time_rel-=sideshift[side];
 
 	 
 	////////////////Position 2//////////////////
-	if(time_rel>-0.40&&time_rel<2) idturn=1;
-	if(time_rel>1.76&&time_rel<4.10) idturn=2;
+	if(time_rel>-1.37&&time_rel<1.37) idturn=1;
+	if(time_rel>1.37&&time_rel<4.10) idturn=2;
 	if(time_rel>4.10&&time_rel<6.45) idturn=3;
 	if(time_rel>6.84&&time_rel<9.18) idturn=4;
 	if(time_rel>10.35&&time_rel<12.30) idturn=5;
@@ -469,7 +480,7 @@ Bool_t clean::Process(Long64_t entry)
 	//if(time_rel>11.52&&time_rel<13.48) idturn=6;
 	//if(time_rel>13.87&&time_rel<15.43) idturn=7;
 	Int_t randomid=-1;
-	if(time_rel>99.6&&time_rel<101.56){
+	if(time_rel>98.23&&time_rel<100.97){
 	  randomid=1;
 	  idturn=1;
 	}
@@ -503,7 +514,7 @@ Bool_t clean::Process(Long64_t entry)
 
 	
 	if(na2 && !na2->IsInside(cal.z,corr.e)){
-	  Int_t side=floor(eid/6);
+	 
 	  //hezs[side]->Fill(cal.z,corr.e);
 	 
 	
@@ -513,6 +524,7 @@ Bool_t clean::Process(Long64_t entry)
 	  if(rid==1&&raw.re>0&&raw.de>1300) goodede=1;
 	  if(rid==2&&raw.re>0&&raw.de>2500) goodede=1;
 	  if(rid==3&&raw.re>0&&raw.de>1450) goodede=1;
+	  if(idturn>0&&idturn<3&&goodede) hmult->Fill(rid,eid);
 	  Bool_t sidecorr=0;
 	  // if(rid==1&&side==0) sidecorr=1;
 	  // if(rid==0&&side==0) sidecorr=1;
@@ -529,11 +541,11 @@ Bool_t clean::Process(Long64_t entry)
 	  if(rid==3&&side==1) sidecorr=1;
 	  if(goodede){
 	   hrtac[rid]->Fill(time_rel,eid); 
-	   hrg[rid]->Fill(raw.re,raw.de);
+	  
 	  }
-	  if(goodede&&sidecorr){
+	  if(goodede&&sidecorr){//
 	    hrtacg->Fill(time_rel,eid);
-	    
+	    hrg[rid]->Fill(cal.re,raw.de);
 	    //    hrtac->Fill(time_rel);
 	    if(idturn==1) hezg2[side][rid]->Fill(cal.z,corr.e);
 	    if(idturn!=-999){ hezg[idturn]->Fill(cal.z,corr.e);

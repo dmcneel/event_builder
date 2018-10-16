@@ -38,12 +38,15 @@ TH2F *hxfxnc[24];
 TH2F *hesumc[24];
 TH2F *htx[24];
 TH2F *hezg[9];
+TH1F *hf[9];
+TH1F *hf_all;
 TH2F *hez_all;
 TH2F *hezs[4];
 TH2F *hxtac[24];
 TH2F *hr[4];
 TH2F *hrg[4];
-TH1I *hrtac;
+TH2F *hrtac[4];
+TH1I *hang[4];
 ULong64_t add;
 ULong64_t NumEntries = 0;
 ULong64_t ProcessedEntries = 0;
@@ -128,23 +131,38 @@ Float_t p6[24]={0,0,0,-792.989,-854.609,-982.011,
 
 /////e calibrations///////
 /////////////////////////////////////////
-Float_t ep0[24]={0.110497,-0.03,0.213181,1.2,0.640,0.4,
-		 0.42932,0.15,0,0.63,0.853,0,
-		 0.547691,0.45,0.3013,0.6993,1.07,0.52,
-		 0.244061,0.2,0.201385,0.8282,0.52,0.43};
-Float_t ep1[24]={0.00344027,0.00382559,0.00404952,0.00349806,0.0035765,0.00412867,
-		 0.00366834,0.00368933,0.00375056,0.003814,0.00373899,0,
-		 0.00343868,0.00345896,0.00359138,0.00380036,0.00345367,0.00387393,
-		 0.00350118,0.00360443,0.00375562,0.0034614,0.00387696,0.00388486};
-Float_t ep2[24]={-32.251,6.9,39.9,-6.9,17.6864,-171.027,
-		 36.2922,19.542,23.503,13.4,23.4317,0,
-		 13.3247,-34.0011,13.9187,-2.24,22.0507,-21.1745,
-		 31.6063,-33.7536,-23.5623,18.3936,0.8,1.55357};
-Float_t ep3[24]={0,0,0,0,0,139.794,
+// Float_t ep0[24]={0.110497,-0.03,0.213181,1.2,0.640,0.4,
+// 		 0.42932,0.15,0,0.63,0.853,0,
+// 		 0.547691,0.45,0.3013,0.6993,1.07,0.52,
+// 		 0.244061,0.2,0.201385,0.8282,0.52,0.43};
+// Float_t ep1[24]={0.00344027,0.00382559,0.00404952,0.00349806,0.0035765,0.00412867,
+// 		 0.00366834,0.00368933,0.00375056,0.003814,0.00373899,0,
+// 		 0.00343868,0.00345896,0.00359138,0.00380036,0.00345367,0.00387393,
+// 		 0.00350118,0.00360443,0.00375562,0.0034614,0.00387696,0.00388486};
+// Float_t ep2[24]={-32.251,6.9,39.9,-6.9,17.6864,-171.027,
+// 		 36.2922,19.542,23.503,13.4,23.4317,0,
+// 		 13.3247,-34.0011,13.9187,-2.24,22.0507,-21.1745,
+// 		 31.6063,-33.7536,-23.5623,18.3936,0.8,1.55357};
+// Float_t ep3[24]={0,0,0,0,0,139.794,
+// 		 0,0,0,0,0,0,
+// 		 0,0,0,0,0,0,
+// 		 0,0,0,0,0,0};
+Float_t ep0[24]={0.514816,0.460846,0.596502,0.548282,0.600,0.4,
+		 0.60414,0.651181,0.53368,0.289059,0.813,0,
+		 0.603175,0.668597,0.509103,0.60944,1.03,0.52,
+		 0.62862,0.539504,0.661149,0.409447,0.48,0.43};
+Float_t ep1[24]={0.00361954,0.00391184,0.00384472,0.00419951,0.0035765,0.00412867,
+		 0.00406082,0.00381772,0.00385497,0.00400755,0.00373899,0,
+		 0.0039205,0.00374873,0.00397163,0.00389666,0.00345367,0.00387393,
+		 0.00363259,0.0038533,0.00394617,0.0037813,0.00387696,0.00388486};
+Float_t ep2[24]={-32.251,6.9,39.9,-6.9,11.789,39.6482,
+		 36.2922,19.542,23.503,14.6892,23.4317,0,
+		 13.3247,-34.0011,13.9187,-15.8526,21.0526,22.4894,
+		 31.6063,-33.7536,-23.5623,38.3936,-11.2209,-6.93722};
+Float_t ep3[24]={0,0,0,0,0,0,
 		 0,0,0,0,0,0,
 		 0,0,0,0,0,0,
 		 0,0,0,0,0,0};
-
 Float_t active=50.5; //Length of active area in mm
 Int_t offset=-300; //Distance in mm between active detector area and target
 Float_t positions[7]={offset-active/2+positions[1],
@@ -186,15 +204,17 @@ void clean::SlaveBegin(TTree * /*tree*/)
   }
   for(Int_t i=0;i<9;i++){
   hezg[i]=new TH2F(Form("hezg%d",i),Form("gated e vs z for turn ID# %i",i),512,-1000,0,512,0,12);
+  hf[i]=new TH1F(Form("hf%d",i),Form("excitation energy for tac peak %d",i),512,-15,15);
   }
   hez_all=new TH2F("hez","e vs z ungated",1024,-1000,0,512,0,12);
-  hrtac=new TH1I("hrtac","gated and added recoil tac",1024,-200,200);
+  hf_all=new TH1F("hf_all","excitation energy for all turns",512,-15,15);
 
   for(Int_t i=0;i<4;i++){
     hr[i]=new TH2F(Form("hr%d",i),Form("Recoil DE vs E recoil %d",i),512,0,8000,512,0,8000);
     hrg[i]=new TH2F(Form("hrg%d",i),Form("Recoil DE vs E recoil gated %d",i),512,0,8000,512,0,8000);
     hezs[i]=new TH2F(Form("hezs%d",i),Form("E vs Z for side %d",i),1024,-1000,0,1200,0,12);
-
+    hrtac[i]=new TH2F(Form("hrtac%d",i),Form("recoil tac vs array channel for recoil id%d",i),1024,-200,200,24,0,24);
+    hang[i]=new TH1I(Form("hang%d",i),Form("Angular dist for peak %d",i),180,0,180);
   }
   
   
@@ -210,7 +230,7 @@ Bool_t clean::Process(Long64_t entry)
   // It can be passed to either clean::GetEntry() or TBranch::GetEntry()
   // to read either all or the required parts of the data. When processing
   // keyed objects with PROOF, the object is already loaded and is available
-  // via the fObject pointer.
+  // via the fObject pointer.//
   //
   // This function should contain the "body" of the analysis. It can contain
   // simple or elaborate selection criteria, run algorithms on the data
@@ -348,6 +368,10 @@ Bool_t clean::Process(Long64_t entry)
       time_corr=t.etc-t.detc;
       time_rel+=time_corr;
       time_rel-=xtcorr;
+      Int_t det=eid%6;
+      Float_t timeshift[4][6]={{9.03223e-01,2.04866e+00,2.16988e+00,1.88652e+00,2.09173e+00,2.81914e+00},{-3.00288e-01,-3.50581e-01,2.24255e-01,-1.65042e-01,-7.79185e-02,1.02307e-01},{-2.71881e+00,-2.83466e+00,-2.29417e+00,-1.80865e+00,-2.25875e+00,-2.39437e+00},{9.66999e-01,2.84868e+00,1.79646e+00,1.27382e+00,1.83388e+00,0}};
+      //time_rel-=timeshift[rid][det];
+      if(raw.de>0) hrtac[rid]->Fill(time_rel,eid);
       //  time_rel*=10;
       // cout<<t.etc<<" "<<t.detc<<endl;
       htx[eid]->Fill(cal.x,time_rel);
@@ -376,11 +400,11 @@ Bool_t clean::Process(Long64_t entry)
       // ////////////////////////////////////////////
 
       ////////////////(d,p)//////////////////////
-      if(time_rel>-1.37&&time_rel<1.37) idturn=0;
-      if(time_rel>1.37&&time_rel<3.71) idturn=1;
-      if(time_rel>4.88&&time_rel<6.05) idturn=2;
-      if(time_rel>7.23&&time_rel<8.40) idturn=3;
-      if(time_rel>9.57&&time_rel<11.52) idturn=4;
+      if(time_rel>-1.37&&time_rel<1.37) idturn=1;
+      if(time_rel>1.37&&time_rel<3.71) idturn=2;
+      if(time_rel>4.88&&time_rel<6.05) idturn=3;
+      if(time_rel>7.23&&time_rel<8.40) idturn=4;
+      if(time_rel>9.57&&time_rel<11.52) idturn=5;
       ////////////////////////////////////////////
 
       //if(time_rel>-3.32&&time_rel<-2.15){//position 1
@@ -388,15 +412,33 @@ Bool_t clean::Process(Long64_t entry)
       //if(time_rel>-0.59&&time_rel<0.59){ //dp
       if(idturn!=-999) hezg[idturn]->Fill(cal.z,corr.e);
       Int_t side=floor(eid/6);
-    	  hrtac->Fill(time_rel);
+      Float_t fit0=0.365440;
+      Float_t fit1=0.98488/0.965498;
+      Float_t ecm=corr.e+5.28567-0.0126579*cal.z/idturn;
+      Float_t ex=(11.4838+4.2190-1.0373*ecm+fit0)*fit1;
       //if(rid==0&&side==0&&raw.de>3100&&raw.re>300){//position1
       // if(rid==0&&side==0&&raw.de>3200){//position2
 	  //    if(idturn==0){
-	if(rid==0&&side==0){//dp
+      Bool_t sidecorr=0;
+      Int_t ang;
+      if(rid==0&&side==0&&raw.de>0) sidecorr=1;
+      if(rid==1&&side==3&&raw.re>0&&raw.de>0) sidecorr=1;
+      if(rid==2&&side==2&&raw.re>0&&raw.de>0) sidecorr=1;
+      if(rid==3&&side==1&&raw.re>0&&raw.de>0) sidecorr=1;
+	  if(sidecorr){//dp
 	  hezs[side]->Fill(cal.z,corr.e);	
 	  hrg[rid]->Fill(raw.re,raw.de);
-
-	  if(idturn==0){
+	  if(idturn==1&&ex>-.15&&ex<.26){
+	    ang=(det-2)*5.25+14.5;
+	    hang[1]->Fill(ang);
+	  }
+	  if(idturn==1&&ex>0.79&&ex<1.2){
+	    ang=(det-2)*4.375+15;
+	    hang[2]->Fill(ang);
+	  }
+	  if(idturn>0){
+	    hf_all->Fill(ex);
+	    hf[idturn]->Fill(ex);
 	    hezc[eid]->Fill(cal.z,corr.e);
 	    hez[eid]->Fill(cal.z,cal.e);
 	    hevx[eid]->Fill(cal.x,cal.e);
@@ -408,54 +450,13 @@ Bool_t clean::Process(Long64_t entry)
 	}
 	//	if(rid==1&&side==3&&raw.de>1200&&raw.re>2000){//position1
 	// if(rid==1&&side==3&&raw.de>1200){//position2
-	if(rid==1&&side==3){//dp
-	   hezs[side]->Fill(cal.z,corr.e);
-	  hrg[rid]->Fill(raw.re,raw.de);
-	  hrtac->Fill(time_rel);
-	  if(idturn==0){
-	    hezc[eid]->Fill(cal.z,corr.e);
-	    hez[eid]->Fill(cal.z,cal.e);
-	    hevx[eid]->Fill(cal.x,cal.e);
-	    hexc[eid]->Fill(cal.x,corr.e);
-	  }
-	  if(tac_t[0]-t.e>640&&tac_t[0]-t.e<693){
-	    hxtac[eid]->Fill(cal.x,tac[0]);
-	  }
-	}
+
 	//	if(rid==2&&side==2&&raw.de>3100&&raw.re>800){//position1
 	//if(rid==2&&side==2&&raw.de>2800){//position2
-	if(rid==2&&side==2){//dp
-	   hezs[side]->Fill(cal.z,corr.e);
-	  hrg[rid]->Fill(raw.re,raw.de);
-	  hrtac->Fill(time_rel);
-	
-	  if(idturn==0){
-	    hezc[eid]->Fill(cal.z,corr.e);
-	    hez[eid]->Fill(cal.z,cal.e);
-	    hevx[eid]->Fill(cal.x,cal.e);
-	    hexc[eid]->Fill(cal.x,corr.e);
-	  }
-	  if(tac_t[0]-t.e>640&&tac_t[0]-t.e<693){
-	    hxtac[eid]->Fill(cal.x,tac[0]);
-	  }
-	}	
+
 	//	if(rid==3&&side==1&&raw.de>1400&&raw.re>2400){//position1
 	//  if(rid==3&&side==1&&raw.de>1300){//position2
-	if(rid==3&&side==1){//
-	   hezs[side]->Fill(cal.z,corr.e);
-	  hrg[rid]->Fill(raw.re,raw.de);
-	  hrtac->Fill(time_rel);
 
-	  if(idturn==0){
-	    hezc[eid]->Fill(cal.z,corr.e);
-	    hez[eid]->Fill(cal.z,cal.e);
-	    hevx[eid]->Fill(cal.x,cal.e);
-	    hexc[eid]->Fill(cal.x,corr.e);
-	  }
-	  if(tac_t[0]-t.e>640&&tac_t[0]-t.e<693){
-	    hxtac[eid]->Fill(cal.x,tac[0]);
-	  }
-	}
 	//	  }
     }
    
