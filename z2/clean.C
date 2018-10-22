@@ -325,8 +325,9 @@ Bool_t clean::Process(Long64_t entry)
     }
   }
   if(emult>1) faults++;
-  //if(eid>-1&&a_rise[eid]>rise_thresh[eid]){
-  if(eid>-1&&emult==1&&a_rise[eid]>rise_thresh[eid]){
+  if(eid>-1&&a_rise[eid]>rise_thresh[eid]){
+  // if(eid>-1&&emult==1&&a_rise[eid]>rise_thresh[eid]){
+  //if(eid>-1){
     //          if(event_type==14||event_type==15){
     raw.e=e[eid];
     raw.xf=xf[eid];
@@ -401,10 +402,10 @@ Bool_t clean::Process(Long64_t entry)
     Float_t rt=rdt_rise[rid*2+1];
     hrve[rid]->Fill(rdt_rise[rid*2+1],raw.re);
     if(rt>fitrangelow[rid]&&rt<fitrangehigh[rid]) cal.re=raw.re*peakhight[rid]/(re0[rid]+re1[rid]*rt+re2[rid]*pow(rt,2)+re3[rid]*pow(rt,3)+re4[rid]*pow(rt,4)+re5[rid]*pow(rt,5));
-    else cal.re=0;
+    else cal.re=raw.re;
     hrvec[rid]->Fill(rdt_rise[rid*2+1],cal.re);
     //if((event_type==1||event_type==2||event_type==3||event_type==4)&&rmult==0) faults++;
-    if(rid!=-1) hr[rid]->Fill(cal.re,raw.de);
+    if(rid!=-1) hr[rid]->Fill(raw.re,raw.de);
 
     
     //////////////////////////////////////////////
@@ -520,17 +521,21 @@ Bool_t clean::Process(Long64_t entry)
 	
 	
 	  Bool_t goodede=0;
-	  if(rid==0&&raw.re>0&&raw.de>3000) goodede=1;
-	  if(rid==1&&raw.re>0&&raw.de>1300) goodede=1;
-	  if(rid==2&&raw.re>0&&raw.de>2500) goodede=1;
-	  if(rid==3&&raw.re>0&&raw.de>1450) goodede=1;
+	  if(rid==0&&raw.re>10&&raw.de>3300) goodede=1;
+	  if(rid==1&&raw.re>100&&raw.de>1400) goodede=1;
+	  if(rid==2&&raw.re>150&&raw.de>2800) goodede=1;
+	  if(rid==3&&raw.re>120&&raw.de>1350) goodede=1;
+	  if(ede0 && rid==0 && ede0->IsInside(cal.re,raw.de)) goodede=0;
+	  if(ede1 && rid==1 && ede1->IsInside(cal.re,raw.de)) goodede=0;
+	  if(ede2 && rid==2 && ede2->IsInside(cal.re,raw.de)) goodede=0;
+	  if(ede3 && rid==3 && ede3->IsInside(cal.re,raw.de)) goodede=0;
 	  if(idturn>0&&idturn<3&&goodede) hmult->Fill(rid,eid);
 	  Bool_t sidecorr=0;
 	  // if(rid==1&&side==0) sidecorr=1;
 	  // if(rid==0&&side==0) sidecorr=1;
 	  // if(rid==0&&side==1) sidecorr=1;
 	  // if(rid==3&&side==1) sidecorr=1;
-	  // if(rid==3&&side==2) sidecorr=1;
+	   if(rid==3&&side==0) sidecorr=1;
 	  // if(rid==2&&side==2) sidecorr=1;
 	  // if(rid==2&&side==3) sidecorr=1;
 	  // if(rid==1&&side==3) sidecorr=1;
@@ -545,7 +550,7 @@ Bool_t clean::Process(Long64_t entry)
 	  }
 	  if(goodede&&sidecorr){//
 	    hrtacg->Fill(time_rel,eid);
-	    hrg[rid]->Fill(cal.re,raw.de);
+	    if(idturn>0) hrg[rid]->Fill(raw.re,raw.de);
 	    //    hrtac->Fill(time_rel);
 	    if(idturn==1) hezg2[side][rid]->Fill(cal.z,corr.e);
 	    if(idturn!=-999){ hezg[idturn]->Fill(cal.z,corr.e);

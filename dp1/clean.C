@@ -46,7 +46,8 @@ TH2F *hxtac[24];
 TH2F *hr[4];
 TH2F *hrg[4];
 TH2F *hrtac[4];
-TH1I *hang[4];
+TH2F *hrtacg;
+TH1F *hang[4];
 ULong64_t add;
 ULong64_t NumEntries = 0;
 ULong64_t ProcessedEntries = 0;
@@ -208,13 +209,13 @@ void clean::SlaveBegin(TTree * /*tree*/)
   }
   hez_all=new TH2F("hez","e vs z ungated",1024,-1000,0,512,0,12);
   hf_all=new TH1F("hf_all","excitation energy for all turns",512,-15,15);
-
+  hrtacg=new TH2F("hrtacg","Detector vs recoil tac gated",4000,-200,200,24,0,24);
   for(Int_t i=0;i<4;i++){
     hr[i]=new TH2F(Form("hr%d",i),Form("Recoil DE vs E recoil %d",i),512,0,8000,512,0,8000);
     hrg[i]=new TH2F(Form("hrg%d",i),Form("Recoil DE vs E recoil gated %d",i),512,0,8000,512,0,8000);
-    hezs[i]=new TH2F(Form("hezs%d",i),Form("E vs Z for side %d",i),1024,-1000,0,1200,0,12);
-    hrtac[i]=new TH2F(Form("hrtac%d",i),Form("recoil tac vs array channel for recoil id%d",i),1024,-200,200,24,0,24);
-    hang[i]=new TH1I(Form("hang%d",i),Form("Angular dist for peak %d",i),180,0,180);
+    hezs[i]=new TH2F(Form("hezs%d",i),Form("E vs Z for side s%d",i),1024,-1000,0,1200,0,12);
+    hrtac[i]=new TH2F(Form("hrtac%d",i),Form("recoil tac vs array channel for recoil id%d",i),4000,-200,200,24,0,24);
+    hang[i]=new TH1F(Form("hang%d",i),Form("Angular dist for peak %d",i),720,0,180);
   }
   
   
@@ -257,7 +258,7 @@ Bool_t clean::Process(Long64_t entry)
   b_XF->GetEntry(entry);
   b_XN->GetEntry(entry);
   b_RDT->GetEntry(entry);
-
+  b_ArrayRise->GetEntry(entry);
   Int_t eid=-1;
   Int_t xfid=-1;
   Int_t xnid=-1;
@@ -267,7 +268,10 @@ Bool_t clean::Process(Long64_t entry)
 
   
   ////////////Array Diagnostic Histograms////////////////
-    
+      Float_t rise_thresh[24]={17.9,22.5,19.7,24.4,19.7,24.7,
+			  4,12.6,7.3,29.2,24.4,0,
+			  3.7,4.2,3.8,6.4,24,26,
+			   22,21.8,20.1,16.7,17.2,16.2};
     
   for(Int_t i=0;i<24;i++){
     if(e[i]>0&&(xf[i]!=0||xn[i]!=0)){
@@ -275,8 +279,8 @@ Bool_t clean::Process(Long64_t entry)
       emult++;
     }
   }
-  if(emult>1) faults++;
-  if(eid>-1){
+  if(emult>1&&a_rise[eid]>rise_thresh[eid]) faults++;
+  if(eid>-1&&a_rise[eid]>rise_thresh[eid]){
     //          if(event_type==14||event_type==15){
     raw.e=e[eid];
     raw.xf=xf[eid];
@@ -371,7 +375,7 @@ Bool_t clean::Process(Long64_t entry)
       Int_t det=eid%6;
       Float_t timeshift[4][6]={{9.03223e-01,2.04866e+00,2.16988e+00,1.88652e+00,2.09173e+00,2.81914e+00},{-3.00288e-01,-3.50581e-01,2.24255e-01,-1.65042e-01,-7.79185e-02,1.02307e-01},{-2.71881e+00,-2.83466e+00,-2.29417e+00,-1.80865e+00,-2.25875e+00,-2.39437e+00},{9.66999e-01,2.84868e+00,1.79646e+00,1.27382e+00,1.83388e+00,0}};
       //time_rel-=timeshift[rid][det];
-      if(raw.de>0) hrtac[rid]->Fill(time_rel,eid);
+      hrtac[rid]->Fill(time_rel,eid);
       //  time_rel*=10;
       // cout<<t.etc<<" "<<t.detc<<endl;
       htx[eid]->Fill(cal.x,time_rel);
@@ -412,29 +416,37 @@ Bool_t clean::Process(Long64_t entry)
       //if(time_rel>-0.59&&time_rel<0.59){ //dp
       if(idturn!=-999) hezg[idturn]->Fill(cal.z,corr.e);
       Int_t side=floor(eid/6);
-      Float_t fit0=0.365440;
-      Float_t fit1=0.98488/0.965498;
+      //Float_t fit0=0.365440;
+      //Float_t fit1=0.98488/0.965498;
+    
       Float_t ecm=corr.e+5.28567-0.0126579*cal.z/idturn;
-      Float_t ex=(11.4838+4.2190-1.0373*ecm+fit0)*fit1;
+      Float_t ex=11.4838+4.2190-1.0373*ecm;
+      Float_t fit0[7]={0,0.357745,0.539984,0.592432,0,0,0};
+      Float_t fit1[7]={1,1.009841,0.975951,0.972755,1,1,1};
+      ex+=fit0[idturn];
+      ex*=fit1[idturn];
       //if(rid==0&&side==0&&raw.de>3100&&raw.re>300){//position1
       // if(rid==0&&side==0&&raw.de>3200){//position2
 	  //    if(idturn==0){
       Bool_t sidecorr=0;
-      Int_t ang;
+    
       if(rid==0&&side==0&&raw.de>0) sidecorr=1;
       if(rid==1&&side==3&&raw.re>0&&raw.de>0) sidecorr=1;
       if(rid==2&&side==2&&raw.re>0&&raw.de>0) sidecorr=1;
       if(rid==3&&side==1&&raw.re>0&&raw.de>0) sidecorr=1;
 	  if(sidecorr){//dp
+	    hrtacg->Fill(time_rel,eid);
 	  hezs[side]->Fill(cal.z,corr.e);	
 	  hrg[rid]->Fill(raw.re,raw.de);
-	  if(idturn==1&&ex>-.15&&ex<.26){
-	    ang=(det-2)*5.25+14.5;
-	    hang[1]->Fill(ang);
+	  if(idturn==1&&det>1&&ex>-.15&&ex<.26){
+	    Float_t ang=0.000001040*pow(cal.z,3)+0.00106729*pow(cal.z,2)+.4415571*cal.z+100.283585;
+	    hang[0]->Fill(ang);
+	    
 	  }
-	  if(idturn==1&&ex>0.79&&ex<1.2){
-	    ang=(det-2)*4.375+15;
-	    hang[2]->Fill(ang);
+	  if(idturn==1&&det>1&&ex>0.79&&ex<1.2){
+	   
+	    Float_t ang=0.0000015682*pow(cal.z,3)+0.001550532*pow(cal.z,2)+.596343*cal.z+114.73702;
+	    hang[1]->Fill(ang);
 	  }
 	  if(idturn>0){
 	    hf_all->Fill(ex);

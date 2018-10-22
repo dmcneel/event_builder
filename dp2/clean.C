@@ -231,7 +231,7 @@ hfr[i]=new TH1F(Form("hfr%d",i),Form("excitation energy for random peak %d",i),5
  hrtac[i]=new TH2F(Form("hrtac%d",i),Form("recoil tac vs array channel for recoil id%d",i),1024,-200,200,24,0,24);
     hr[i]=new TH2F(Form("hr%d",i),Form("Recoil DE vs E recoil %d",i),512,0,8000,512,0,8000);
     hrg[i]=new TH2F(Form("hrg%d",i),Form("Recoil DE vs E recoil gated %d",i),512,0,8000,512,0,8000);
-    hang[i]=new TH1I(Form("hang%d",i),Form("Angular dist for peak %d",i),180,0,180);
+    hang[i]=new TH1I(Form("hang%d",i),Form("Angular dist for peak %d",i),1000,-1000,0);
     for(Int_t j=0;j<6;j++){
       hrag[i][j]=new TH2F(Form("hrag%d%d",i,j),Form("Recoil DE vs E recoil %d gated on tac and e vs z",i),512,0,8000,512,0,8000);
       hrise[i][j]=new TH2F(Form("hrise%d%d",i,j),Form("Recoil rise time %d vs position along array for X state for state %d",i,j),1000,-1000,0,1000,0,200);
@@ -280,7 +280,7 @@ Bool_t clean::Process(Long64_t entry)
 
   /////////////Perform array functions///////////////
   ProcessedEntries++;
-
+ 
   if (ProcessedEntries>NumEntries*Frac-1) {
     printf(" %3.0f%% (%llu/%llu Mil) processed in %6.1f seconds\n",Frac*100,ProcessedEntries/1000000,NumEntries/1000000,StpWatch.RealTime());
     StpWatch.Start(kFALSE);
@@ -304,17 +304,21 @@ Bool_t clean::Process(Long64_t entry)
   
   ////////////Array Diagnostic Histograms////////////////
   Float_t active=50.5; //Length of active area in mm
-  Int_t offset=-500; //Distance in mm between active detector area and target
+  Int_t offset=-100; //Distance in mm between active detector area and target
   Float_t positions[7]={offset-active/2+positions[1],
-		      66.76,125.76,184.76,243.66,302.96,361.56};
+		      66.76,125.76,184.76,243.66,302.96,361.56};    
+  Float_t rise_thresh[24]={17.9,22.5,19.7,24.4,19.7,24.7,
+			  4,12.6,7.3,29.2,24.4,0,
+			  3.7,4.2,3.8,6.4,24,26,
+			   22,21.8,20.1,16.7,17.2,16.2};
   for(Int_t i=0;i<24;i++){
     if(e[i]>0&&(xf[i]!=0||xn[i]!=0)){
       eid=i;
       emult++;
     }
   }
-  if(emult>1) faults++;
-  if(eid>-1){
+  if(emult>1&&a_rise[eid]>rise_thresh[eid]) faults++;
+  if(eid>-1&&a_rise[eid]>rise_thresh[eid]){
     //          if(event_type==14||event_type==15){
     raw.e=e[eid];
     raw.xf=xf[eid];
@@ -429,7 +433,9 @@ Bool_t clean::Process(Long64_t entry)
 	hez_all->Fill(cal.z,corr.e);
 
 	////////////////(d,p)//////////////////////
-	if(time_rel>-1&&time_rel<1) idturn=2;
+	if(time_rel>-5&&time_rel<-2) idturn=1;
+	 if(time_rel>-1&&time_rel<1) idturn=2; //dp2_1 setting
+	 //if(time_rel>-2&&time_rel<0) idturn=2; //dp2_2 setting
 	if(time_rel>1.65&&time_rel<3.45) idturn=3;
 	if(time_rel>4.55&&time_rel<6.15) idturn=4;
 	if(time_rel>6.85&&time_rel<8.75) idturn=5;
@@ -444,10 +450,13 @@ Bool_t clean::Process(Long64_t entry)
 	  randomid=1;
 	  idturn=1;
 	}
-	Float_t fit0=0.4363;
-	Float_t fit1=0.98488/1.0045;
-	Float_t ecm=corr.e+5.28567-0.0126579*cal.z/idturn;
-	Float_t ex=(11.4838+4.2190-1.0373*ecm+fit0)*fit1;
+
+	//Float_t fit0=0.395321; //dp2_1
+	//Float_t fit1=0.972589; //dp2_1
+	Float_t fit0=0.3600375; //dp2_2
+	Float_t fit1=0.9864489;// dp2_2
+	Float_t ecm=corr.e+5.31878-0.0126975*cal.z/idturn;
+	Float_t ex=(11.5565+4.2190-1.0373*ecm+fit0)*fit1;
 	//Float_t ex=11.4838+4.2190-1.0373*ecm;
 	//if(time_rel>-3.32&&time_rel<-2.15){//position 1
 	//	if(time_rel>-2.54&&time_rel<-0.98){ //position 2
@@ -467,20 +476,20 @@ Bool_t clean::Process(Long64_t entry)
 
 	Int_t ang;
 	if(sidecorr&&goodede){//
-	  if(idturn==2&&ex>-.15&&ex<.26){
-	    ang=det*2.08+26.5;
-	    hang[1]->Fill(ang);
+	  if(idturn==1&&ex>-.15&&ex<.26){
+
+	    hang[0]->Fill(cal.z);
 	  }
-	  if(idturn==2&&ex>0.79&&ex<1.2){
-	    ang=det*2.33333+22.5;
-	    hang[2]->Fill(ang);
+	  if(idturn==1&&ex>0.79&&ex<1.2){
+	  
+	    hang[1]->Fill(cal.z);
 	  }
 	  hrtacg->Fill(time_rel,eid);
 	  if(idturn>0&&idturn<8){
 	    hf_all->Fill(ex);
 	    if(randomid<0) hf[idturn]->Fill(ex);
 	    if(randomid>0) hfr[randomid]->Fill(ex);
-	    hezs[side]->Fill(cal.z,corr.e);
+	    if(idturn==3) hezs[side]->Fill(cal.z,corr.e);
 	    hrg[rid]->Fill(cal.re,raw.de);
 	    hez[eid]->Fill(cal.z,cal.e);
 	    hexc[eid]->Fill(cal.x,corr.e);

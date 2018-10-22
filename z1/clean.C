@@ -323,9 +323,10 @@ Bool_t clean::Process(Long64_t entry)
       emult++;
     }
   }
-  if(emult>1&&a_rise[eid]>rise_thresh[eid]) faults++;
+  //if(emult>1&&a_rise[eid]>rise_thresh[eid]) faults++;
   // if(eid>-1&&a_rise[eid]<15){
   if(eid>-1&&a_rise[eid]>rise_thresh[eid]){
+  //if(eid>-1){
     //        if(eid>-1){
     //          if(event_type==14||event_type==15){
     raw.e=e[eid];
@@ -469,7 +470,7 @@ Bool_t clean::Process(Long64_t entry)
 	Int_t randomid=-1;
  	// if(time_rel>100.4&&time_rel<102.34){
 	//   randomid=0;
-	//   idturn=0;
+	//   idturn=0;//
 	// }
 	if(time_rel>97.84&&time_rel<100.4){
 	  idturn=1;
@@ -501,7 +502,9 @@ Bool_t clean::Process(Long64_t entry)
 	//	if(idturn>0) ecm=corr.e+4.92877-0.0122231*cal.z/idturn;
 
       //      Float_t ex=0.0122915*cal.z+17.774-corr.e;
-	Float_t ex=(16.6+6.4650-(29/28)*ecm-0.371)*4.878/5.034;
+	Float_t fit0=-0.4110514;
+	Float_t fit1=1.0283385;
+	Float_t ex=(16.6+6.4650-(29/28)*ecm+fit0)*fit1;
 	Int_t weight=0;
 	if(idturn==2) weight=1;
 	if(idturn==-1) weight=-1;
@@ -516,10 +519,10 @@ Bool_t clean::Process(Long64_t entry)
 	  // hrtac2[side][rid]->Fill(time_rel);
 
 	  Bool_t goodede=0;
-	  if(rid==0&&raw.re>0&&raw.de>3600) goodede=1;
-	  if(rid==1&&raw.re>0&&raw.de>1743) goodede=1;
-	  if(rid==2&&raw.re>0&&raw.de>3542) goodede=1;
-	  if(rid==3&&raw.re>0&&raw.de>1679) goodede=1;
+	  if(rid==0&&raw.re>0&&raw.de>3300) goodede=1;//
+	  if(rid==1&&raw.re>0&&raw.de>1443) goodede=1;
+	  if(rid==2&&raw.re>0&&raw.de>3242) goodede=1;
+	  if(rid==3&&raw.re>0&&raw.de>1379) goodede=1;
 	  if(ede0 && rid==0 && ede0->IsInside(cal.re,raw.de)) goodede=0;
 	  if(ede1 && rid==1 && ede1->IsInside(cal.re,raw.de)) goodede=0;
 	  if(ede2 && rid==2 && ede2->IsInside(cal.re,raw.de)) goodede=0;
@@ -541,13 +544,13 @@ Bool_t clean::Process(Long64_t entry)
 	  if(rid==2&&side==2) sidecorr=1;
 	  // if(rid==2&&side==1) sidecorr=1;
 	  if(rid==3&&side==1) sidecorr=1;
-	  //if(rid==3&&side==0) sidecorr=1;
+	  if(rid==3&&side==0) sidecorr=1;
 	  if(goodede&&sidecorr){
 	  //   if(idturn==1&&ex>-.15&&ex<.26){
 	  //   ang=det*3.5+14.5;
 	  //   hang[1]->Fill(ang);
 	  // }
-	  // if(idturn==1&&ex>0.79&&ex<1.2){
+	  // if(idturn==1&&ex>0.79&&ex<1.2){//
 	  //   ang=det*3.5+14.5;
 	  //   hang[2]->Fill(ang);
 	  // }
@@ -563,7 +566,7 @@ Bool_t clean::Process(Long64_t entry)
 	     
 	    }
 	    
-	    if(idturn>-1&&randomid<0) hf[idturn]->Fill(ex);
+	    if(idturn>0) hf[idturn]->Fill(ex);
 	    if(randomid>-1) hfr[randomid]->Fill(ex);
 	     // hf->Fill(ex);
 	    //hf->Fill(ex,weight);
@@ -582,7 +585,7 @@ Bool_t clean::Process(Long64_t entry)
       Int_t side=floor(eid/6);
      
      
-    //////////////////////////////////////////////
+    ///////////////////////////////////////////////
 
 
 
